@@ -13,56 +13,30 @@
         .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; width: 90%; max-width: 350px; box-sizing: border-box;}
         .login-box h2 { margin-top: 0; color: #2c3e50; margin-bottom: 20px;}
         .login-input { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 8px; font-size: 1.2em; text-align: center; box-sizing: border-box;}
-        .login-btn { background: #e74c3c; color: white; border: none; padding: 12px; width: 100%; font-size: 1.2em; border-radius: 8px; cursor: pointer; font-weight: bold;}
+        .login-btn { background: #e74c3c; color: white; border: none; padding: 12px; width: 100%; font-size: 1.2em; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;}
         
-        /* =========================================
-           🔢 ระบบ Numpad ทัชสกรีน
-           ========================================= */
-        .numpad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .num-btn {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 15px;
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #2c3e50;
-            cursor: pointer;
-            transition: all 0.1s;
-            user-select: none; /* ป้องกันการคลุมดำเวลากดรัวๆ */
-        }
-        .num-btn:active {
-            background: #dee2e6;
-            transform: scale(0.92); /* เอฟเฟกต์ปุ่มยุบเวลากด */
-        }
-        .action-btn {
-            background: #ecf0f1;
-            color: #e74c3c;
-        }
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;}
+        .num-btn { background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 10px; padding: 15px; font-size: 1.5em; font-weight: bold; color: #2c3e50; cursor: pointer; transition: all 0.1s; user-select: none;}
+        .num-btn:active { background: #dee2e6; transform: scale(0.92); }
+        .action-btn { background: #ecf0f1; color: #e74c3c;}
 
         /* --- โครงสร้างหน้า Admin --- */
         #admin-layout { display: none; display: flex; height: 100vh; overflow: hidden;}
         
-        /* แถบเมนูด้านซ้าย */
         .sidebar { width: 250px; background: #2c3e50; color: white; display: flex; flex-direction: column; flex-shrink: 0;}
         .sidebar h2 { text-align: center; padding: 20px 0; margin: 0; background: #1a252f; font-size: 1.5em; border-bottom: 2px solid #e74c3c;}
         .nav-btn { background: none; border: none; color: white; padding: 20px; text-align: left; font-size: 1.1em; cursor: pointer; border-bottom: 1px solid #34495e; transition: 0.2s; display: flex; align-items: center; gap: 10px;}
         .nav-btn:hover, .nav-btn.active { background: #34495e; border-left: 5px solid #e74c3c;}
         .logout-btn { margin-top: auto; background: #c0392b; text-align: center; justify-content: center;}
         
-        /* พื้นที่เนื้อหาด้านขวา */
         .main-content { flex: 1; padding: 30px; overflow-y: auto; background: #f4f6f9;}
         .content-section { display: none; }
         .content-section.active { display: block; }
         
         .header-action { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;}
         .header-action h1 { margin: 0; color: #2c3e50; font-size: 1.8em;}
-        .btn-add { background: #2ecc71; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; font-weight: bold; white-space: nowrap;}
+        .btn-add { background: #2ecc71; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; font-weight: bold; white-space: nowrap; transition: 0.2s;}
+        .btn-add:active { transform: scale(0.98); }
         
         /* --- ตารางข้อมูล --- */
         .table-responsive { width: 100%; overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);}
@@ -77,16 +51,16 @@
         .btn-delete { background: #e74c3c; }
         .btn-edit { background: #f39c12; }
         
-        /* สวิตช์เปิดปิดของหมด */
+        /* สวิตช์ */
         .switch { position: relative; display: inline-block; width: 44px; height: 22px; flex-shrink: 0;}
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #2ecc71; transition: .4s; border-radius: 34px; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e74c3c; transition: .4s; border-radius: 34px; }
         .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #e74c3c; } 
+        input:checked + .slider { background-color: #2ecc71; } 
         input:checked + .slider:before { transform: translateX(22px); }
 
         /* =========================================
-           🌟 ระบบ Pop-up Modal (เด้งกลางจอ)
+           🌟 ระบบ Pop-up Modal
            ========================================= */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); padding: 20px; box-sizing: border-box;}
         .modal-box { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative;}
@@ -95,13 +69,12 @@
 
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #2c3e50;}
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-family: inherit; font-size: 1em;}
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-family: inherit; font-size: 1em;}
         
         .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%;}
         .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer;}
         .btn-upload { background-color: #34495e; color: white; padding: 10px; border-radius: 5px; text-align: center; display: block; font-weight: bold; cursor: pointer; border: 2px dashed #bdc3c7;}
 
-        /* ตัวกรองวันที่ (Filter) */
         .filter-container { display: flex; gap: 10px; align-items: center; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-wrap: wrap; width: 100%; box-sizing: border-box;}
         .filter-input { padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit; font-size: 1em; flex: 1; min-width: 120px;}
 
@@ -114,14 +87,16 @@
         .sortable-ghost { opacity: 0.4; background: #ecf0f1; border: 2px dashed #3498db;} 
 
         /* =========================================
-           📱 มือถือและแท็บเล็ต (Responsive Design)
+           🌟 CSS สำหรับจัดเลย์เอาต์หน้าตั้งค่าร้านค้า (Settings Grid)
            ========================================= */
+        .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; max-width: 1200px; }
+        .settings-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .settings-card h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #f1f2f6; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+
         @media (max-width: 768px) {
             #admin-layout { flex-direction: column; overflow: auto; }
-            
-            /* เปลี่ยนแถบเมนูด้านซ้ายให้มาอยู่ด้านบน เลื่อนซ้ายขวาได้ */
             .sidebar { width: 100%; flex-direction: row; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; background: #1a252f; }
-            .sidebar h2 { display: none; } /* ซ่อนคำว่า ระบบจัดการหลังร้าน */
+            .sidebar h2 { display: none; }
             .nav-btn { flex: 0 0 auto; padding: 15px; border-bottom: none; border-right: 1px solid #2c3e50; font-size: 1em; }
             .nav-btn:hover, .nav-btn.active { border-left: none; border-bottom: 4px solid #e74c3c; background: #2c3e50; }
             .logout-btn { margin-left: auto; border-right: none;}
@@ -129,8 +104,6 @@
             .main-content { padding: 15px; }
             .header-action { flex-direction: column; align-items: flex-start; }
             .header-action button { width: 100%; }
-            
-            /* ลดขนาดฟอนต์ในมือถือ */
             th, td { padding: 10px; font-size: 0.9em; }
             .header-action h1 { font-size: 1.5em; margin-bottom: 10px;}
         }
@@ -142,26 +115,21 @@
         <div class="login-box">
             <h2>🔒 ระบบผู้จัดการร้าน</h2>
             <input type="password" id="admin-pin" class="login-input" placeholder="รหัสผ่าน (PIN)" maxlength="6" readonly style="letter-spacing: 5px; font-size: 1.5em; background: #fff;">
-            
             <div class="numpad">
                 <button class="num-btn" onclick="appendPin('1')">1</button>
                 <button class="num-btn" onclick="appendPin('2')">2</button>
                 <button class="num-btn" onclick="appendPin('3')">3</button>
-                
                 <button class="num-btn" onclick="appendPin('4')">4</button>
                 <button class="num-btn" onclick="appendPin('5')">5</button>
                 <button class="num-btn" onclick="appendPin('6')">6</button>
-                
                 <button class="num-btn" onclick="appendPin('7')">7</button>
                 <button class="num-btn" onclick="appendPin('8')">8</button>
                 <button class="num-btn" onclick="appendPin('9')">9</button>
-                
                 <button class="num-btn action-btn" onclick="clearPin()">C</button>
                 <button class="num-btn" onclick="appendPin('0')">0</button>
                 <button class="num-btn action-btn" onclick="deletePin()">⌫</button>
             </div>
-
-            <button class="login-btn" onclick="checkLogin()">เข้าสู่ระบบ</button>
+            <button class="login-btn" id="btn-login-submit" onclick="checkLogin()">เข้าสู่ระบบ</button>
         </div>
     </div>
 
@@ -171,6 +139,7 @@
             <button class="nav-btn active" onclick="switchTab('menu')">🍔 จัดการเมนู</button>
             <button class="nav-btn" onclick="switchTab('reorder')">📑 จัดเรียงเมนู</button>
             <button class="nav-btn" onclick="switchTab('history')">🧾 ประวัติบิล</button>
+            <button class="nav-btn" onclick="switchTab('settings')">⚙️ ตั้งค่าร้านค้า</button>
             <button class="nav-btn" onclick="window.open('dashboard.html', '_blank')">📊 Dashboard</button>
 
             <div style="margin: 10px 20px; border-top: 2px solid #34495e;"></div>
@@ -189,7 +158,6 @@
                     <h1>🍔 จัดการเมนูอาหาร</h1>
                     <button class="btn-add" onclick="openModal('add-menu-modal')">+ เพิ่มเมนูใหม่</button>
                 </div>
-
                 <div class="table-responsive">
                     <table>
                         <thead>
@@ -198,7 +166,7 @@
                                 <th>ชื่อเมนู</th>
                                 <th>หมวดหมู่</th>
                                 <th>ราคา</th>
-                                <th style="text-align:center;">ของหมด?</th>
+                                <th style="text-align:center;">เปิดขาย?</th>
                                 <th style="text-align:center;">จัดการ</th>
                             </tr>
                         </thead>
@@ -214,11 +182,9 @@
                     <h1>📑 จัดเรียงลำดับหน้าเมนูอาหาร</h1>
                     <button class="btn-add" style="background:#f39c12;" onclick="saveMenuOrder()">💾 บันทึกลำดับใหม่</button>
                 </div>
-                
                 <div style="background: #e8f4f8; border-left: 5px solid #3498db; padding: 15px; margin-bottom: 20px; border-radius: 5px; font-size: 0.9em;">
                     <strong>💡 ทริค:</strong> ลากแถบสีเข้มเพื่อสลับหมวดหมู่ หรือลากเมนูสีขาวเพื่อสลับคิวในหมวดหมู่นั้นๆ เสร็จแล้วกดปุ่มบันทึก
                 </div>
-
                 <div id="reorder-container">
                     <p style="text-align:center;">กำลังโหลดข้อมูล...</p>
                 </div>
@@ -228,7 +194,6 @@
                 <div class="header-action">
                     <h1>🧾 ประวัติบิลที่ชำระแล้ว</h1>
                 </div>
-                
                 <div class="filter-container" style="margin-bottom: 20px;">
                     <label style="font-weight:bold; color:#2c3e50; width: 100%;">📅 ค้นหาช่วงวันที่:</label>
                     <input type="date" id="history-start-date" class="filter-input" onchange="renderHistory()">
@@ -239,7 +204,6 @@
                         <button class="btn-add" style="background:#2ecc71; flex:1;" onclick="fetchHistory()">🔄 โหลดใหม่</button>
                     </div>
                 </div>
-
                 <div class="table-responsive">
                     <table>
                         <thead>
@@ -256,6 +220,150 @@
                     </table>
                 </div>
             </div>
+
+            <div id="tab-settings" class="content-section">
+                <div class="header-action">
+                    <h1>⚙️ ตั้งค่าระบบร้านค้า (Store Settings)</h1>
+                </div>
+                
+                <div class="settings-grid">
+                    
+                    <div class="settings-card" style="border-top: 5px solid #e74c3c;">
+                        <h3>🛑 ระบบเปิด-ปิดร้าน</h3>
+                        <div id="store-status-container" class="form-group" style="display: flex; justify-content: space-between; align-items: center; background: #e8f4f8; padding: 15px; border-radius: 8px; border-left: 5px solid #3498db; transition: 0.3s;">
+                            <div style="flex-grow:1;">
+                                <label id="store-status-label" style="margin: 0; font-size: 1.1em; font-weight: bold; transition: 0.3s; color: #2c3e50;">🟢 ร้านเปิด</label>
+                                <small style="color: #7f8c8d; display: block; margin-top: 5px;">ปิดรับออเดอร์ลูกค้าจะไม่สามารถสั่งได้</small>
+                            </div>
+                            <label class="switch" style="transform: scale(1.1);">
+                                <input type="checkbox" id="set-is-open" checked onchange="toggleStoreStatusLabel()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label>ข้อความแจ้งเตือนเมื่อปิดร้าน</label>
+                            <input type="text" id="set-closed-message" placeholder="เช่น ขออภัย ตอนนี้ครัวปิดแล้วนะครับ">
+                        </div>
+                    </div>
+
+                    <div class="settings-card" style="border-top: 5px solid #3498db;">
+                        <h3>🏪 ข้อมูลหน้าร้าน & โลโก้</h3>
+                        <div class="form-group">
+                            <label>โลโก้ร้านค้า (แสดงหน้าสั่งอาหาร)</label>
+                            <div class="file-upload-wrapper">
+                                <span class="btn-upload">📷 อัปโหลดโลโก้ร้าน</span>
+                                <input type="file" id="set-logo-file" accept="image/*">
+                            </div>
+                            <input type="hidden" id="set-logo-base64">
+                            <img id="set-logo-preview" style="display:none; max-width: 120px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; padding: 5px; background: #fdfdfd;">
+                        </div>
+                    </div>
+
+                    <div class="settings-card" style="border-top: 5px solid #2ecc71;">
+                        <h3>🧾 ข้อมูลใบเสร็จ</h3>
+                        <div class="form-group">
+                            <label>ชื่อร้านอาหาร</label>
+                            <input type="text" id="set-store-name" placeholder="เช่น ร้านอาหารของเรา">
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <div class="form-group" style="flex: 2;">
+                                <label>ที่อยู่ร้าน</label>
+                                <input type="text" id="set-store-address" placeholder="เช่น 123 ม.4 ถ.สุขุมวิท กทม.">
+                            </div>
+                            <div class="form-group" style="flex: 1.5;">
+                                <label>เบอร์โทรศัพท์</label>
+                                <input type="text" id="set-store-phone" placeholder="เช่น 02-123-4567">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>ข้อความขอบคุณท้ายใบเสร็จ</label>
+                            <input type="text" id="set-receipt-footer" placeholder="เช่น ขอบคุณที่ใช้บริการครับ">
+                        </div>
+                    </div>
+
+                    <div class="settings-card" style="border-top: 5px solid #f39c12;">
+                        <h3>💳 จัดการชำระเงิน</h3>
+                        <div class="form-group">
+                            <label>เบอร์พร้อมเพย์ (PromptPay)</label>
+                            <input type="text" id="set-promptpay" placeholder="เช่น 0918143178 (ใส่เบอร์ติดกัน)">
+                            <small style="color: #7f8c8d;">* สำหรับสร้าง QR Code สแกนจ่ายหน้าแคชเชียร์</small>
+                        </div>
+                    </div>
+
+                    <div class="settings-card" style="border-top: 5px solid #9b59b6;">
+                        <h3>🪑 จัดการจำนวนโต๊ะ</h3>
+                        <div class="form-group">
+                            <label>จำนวนโต๊ะทั้งหมดในร้าน</label>
+                            <input type="number" id="set-total-tables" placeholder="เช่น 15" min="1" max="100">
+                            <small style="color: #7f8c8d;">* จะส่งผลต่อจำนวนกล่องโต๊ะในหน้าแคชเชียร์</small>
+                        </div>
+                    </div>
+
+                    <div class="settings-card" style="border-top: 5px solid #f1c40f;">
+                        <h3>⭐ จัดการแต้มสมาชิก</h3>
+                        <div class="form-group">
+                            <label>อัตราการแจกแต้ม (บาท / 1 แต้ม)</label>
+                            <input type="number" id="set-points-rate" placeholder="เช่น 100" min="1">
+                            <small style="color: #7f8c8d;">* เช่น ใส่ "100" คือ ยอดทุกๆ 100 บาท ได้รับ 1 แต้ม</small>
+                        </div>
+                    </div>
+
+                    <div class="settings-card" style="border-top: 5px solid #e67e22; grid-column: 1 / -1;">
+                        <h3>⏱️ แจ้งเตือนห้องครัว (SLA & Sound)</h3>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label>🟡 เตือนล่าช้า (นาที)</label>
+                                <input type="number" id="set-sla-warning" placeholder="เช่น 10" min="1">
+                                <small style="color: #7f8c8d;">บิลเปลี่ยนเป็น สีเหลือง</small>
+                            </div>
+
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label>🔴 เตือนวิกฤต (นาที)</label>
+                                <input type="number" id="set-sla-alert" placeholder="เช่น 20" min="2">
+                                <small style="color: #7f8c8d;">บิลเปลี่ยนเป็น สีแดง กะพริบ</small>
+                            </div>
+
+                            <div class="form-group" style="flex: 2; min-width: 250px;">
+                                <label>🔔 เสียงแจ้งเตือนออเดอร์ใหม่</label>
+                                <select id="set-alert-sound" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1em;" onchange="toggleCustomSoundBox()">
+                                    <option value="default">เสียง ติ๊งต่อง (Default)</option>
+                                    <option value="bell">เสียง กระดิ่งโรงแรม (Bell)</option>
+                                    <option value="kitchen">เสียง กริ่งห้องครัว (Kitchen)</option>
+                                    <option value="custom">🎵 อัปโหลดเสียงเอง (MP3/WAV)...</option>
+                                </select>
+
+                                <div id="custom-sound-box" style="display: none; margin-top: 10px; padding: 10px; background: #fff; border: 1px dashed #bdc3c7; border-radius: 8px;">
+                                    <div class="file-upload-wrapper">
+                                        <span class="btn-upload" style="background-color: #9b59b6; border-color: #8e44ad; font-size: 0.9em; padding: 8px;">🎵 เลือกไฟล์เสียงจากเครื่อง</span>
+                                        <input type="file" id="set-custom-sound-file" accept="audio/*">
+                                    </div>
+                                    <small id="custom-sound-name" style="color: #27ae60; font-weight: bold; display: block; margin-top: 5px;"></small>
+                                    <input type="hidden" id="set-custom-sound-base64">
+                                </div>
+
+                                <button onclick="testSound()" style="margin-top: 10px; padding: 8px 15px; background: #ecf0f1; color: #2c3e50; font-weight: bold; border: 1px solid #bdc3c7; border-radius: 5px; cursor:pointer; transition: 0.2s;">▶️ ทดสอบฟังเสียง</button>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="settings-card" style="border-top: 5px solid #34495e; grid-column: 1 / -1;">
+                        <h3>🔒 ความปลอดภัย</h3>
+                        <div class="form-group" style="max-width: 400px;">
+                            <label style="color:#c0392b;">รหัสผ่านเข้าหลังบ้าน (Admin PIN)</label>
+                            <input type="text" id="set-admin-pin" placeholder="ใส่รหัสตัวเลข 6 หลัก" maxlength="6" style="letter-spacing: 5px; font-weight: bold;">
+                            <small style="color: #7f8c8d;">* ต้องเป็นตัวเลข 6 หลักเท่านั้น (ค่าเริ่มต้น 123456)</small>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 30px; text-align: right;">
+                    <button class="btn-add" style="width: 100%; max-width: 400px; font-size:1.3em; padding:15px; background: #3498db; box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);" onclick="saveStoreSettings()">💾 บันทึกการตั้งค่าทั้งหมด</button>
+                </div>
+
+            </div>
+
         </div>
     </div>
 
@@ -324,68 +432,67 @@
         let allHistoryData = []; 
         let sortableInstances = []; 
 
-        // ==========================================
-        // 🔢 ฟังก์ชันสำหรับ Numpad
-        // ==========================================
         function appendPin(num) {
             const pinInput = document.getElementById('admin-pin');
-            if (pinInput.value.length < 6) {
-                pinInput.value += num;
-            }
-            // ถ้ารหัสครบ 6 ตัว ให้ทำการกด Login ให้อัตโนมัติเลย (ไม่ต้องกดปุ่มเข้าสู่ระบบซ้ำ)
-            if (pinInput.value.length === 6) {
-                setTimeout(checkLogin, 100); 
-            }
+            if (pinInput.value.length < 6) pinInput.value += num;
+            if (pinInput.value.length === 6) setTimeout(checkLogin, 100); 
         }
-
-        function clearPin() {
-            document.getElementById('admin-pin').value = '';
-        }
-
+        function clearPin() { document.getElementById('admin-pin').value = ''; }
         function deletePin() {
             const pinInput = document.getElementById('admin-pin');
             pinInput.value = pinInput.value.slice(0, -1);
         }
 
-        // ==========================================
-
-        function checkLogin() {
+        async function checkLogin() {
             const pin = document.getElementById('admin-pin').value;
-            if (pin === "123456") {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('admin-layout').style.display = 'flex';
-                fetchMenus(); 
-            } else { alert("❌ รหัสผ่านไม่ถูกต้อง!"); }
+            const btn = document.getElementById('btn-login-submit');
+            btn.innerHTML = '⏳ กำลังตรวจสอบ...';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/settings`);
+                const data = await response.json();
+                
+                const correctPin = data.admin_pin || "123456";
+
+                if (pin === correctPin) {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('admin-layout').style.display = 'flex';
+                    fetchMenus(); 
+                } else { 
+                    alert("❌ รหัสผ่านไม่ถูกต้อง!"); 
+                    clearPin(); 
+                }
+            } catch (err) {
+                alert("❌ ไม่สามารถเชื่อมต่อระบบหลังบ้านได้");
+            } finally {
+                btn.innerHTML = 'เข้าสู่ระบบ';
+            }
         }
 
-        function logout() {
-            window.location.reload(); // รีเฟรชหน้าเว็บเพื่อเคลียร์ค่าทั้งหมดตอนออก
-        }
+        function logout() { window.location.reload(); }
 
         function switchTab(tabName) {
             document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            
             document.getElementById(`tab-${tabName}`).classList.add('active');
-            event.currentTarget.classList.add('active'); // อัปเดตปุ่มที่ถูกกด
+            event.currentTarget.classList.add('active'); 
             
             if(tabName === 'history') fetchHistory();
             if(tabName === 'menu') fetchMenus();
             if(tabName === 'reorder') fetchForReorder(); 
+            if(tabName === 'settings') fetchSettings(); 
         }
 
-        // ==========================================
-        // 🌟 ระบบจัดการ Modal 
-        // ==========================================
         function openModal(modalId) {
             document.getElementById(modalId).style.display = 'flex';
-            document.body.style.overflow = 'hidden'; // ล็อกฉากหลังไม่ให้เลื่อน
+            document.body.style.overflow = 'hidden'; 
         }
 
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
-            document.body.style.overflow = 'auto'; // ปลดล็อกฉากหลัง
+            document.body.style.overflow = 'auto'; 
             
-            // ล้างค่าฟอร์มตอนปิด
             if(modalId === 'add-menu-modal') {
                 document.getElementById('new-name').value = '';
                 document.getElementById('new-category').value = '';
@@ -397,21 +504,17 @@
             }
         }
 
-        // ==========================================
-        // 🍔 ระบบจัดการเมนู 
-        // ==========================================
         async function fetchMenus() {
             try {
                 const response = await fetch(`${BACKEND_URL}/api/menu?t=${new Date().getTime()}`);
                 const menus = await response.json();
                 
-                let html = '';
-                let categories = new Set(); 
+                let html = ''; let categories = new Set(); 
 
                 menus.forEach(m => {
                     if (m.category && m.category.toLowerCase() !== 'addon') categories.add(m.category); 
                     const imgUrl = m.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100';
-                    const isChecked = m.is_out_of_stock ? 'checked' : '';
+                    const isChecked = !m.is_out_of_stock ? 'checked' : '';
                     
                     html += `
                         <tr>
@@ -420,7 +523,7 @@
                             <td style="display:none;"></td> <td>฿${m.price}</td>
                             <td style="text-align:center;">
                                 <label class="switch">
-                                    <input type="checkbox" ${isChecked} onchange="toggleStock(${m.id}, this.checked)">
+                                    <input type="checkbox" ${isChecked} onchange="toggleStock(${m.id}, !this.checked)">
                                     <span class="slider"></span>
                                 </label>
                             </td>
@@ -435,7 +538,6 @@
                 });
                 
                 document.getElementById('menu-table-body').innerHTML = html;
-
                 let datalistHtml = '';
                 categories.forEach(cat => { datalistHtml += `<option value="${cat}">`; });
                 document.getElementById('category-list').innerHTML = datalistHtml;
@@ -443,7 +545,6 @@
             } catch (err) { console.error("Error loading menu", err); }
         }
 
-        // ฟังก์ชันแปลงและย่อรูปภาพ
         function handleImageUpload(inputId, base64Id, previewId) {
             document.getElementById(inputId).addEventListener('change', function(event) {
                 const file = event.target.files[0];
@@ -469,8 +570,10 @@
                 reader.readAsDataURL(file);
             });
         }
+        
         handleImageUpload('new-image-file', 'new-image-base64', 'image-preview');
         handleImageUpload('edit-image-file', 'edit-image-base64', 'edit-image-preview');
+        handleImageUpload('set-logo-file', 'set-logo-base64', 'set-logo-preview');
 
         async function saveNewMenu() {
             const data = {
@@ -548,17 +651,12 @@
         // ==========================================
         // 📑 ระบบจัดเรียงลำดับเมนู 
         // ==========================================
-        // ==========================================
-        // 📑 ระบบจัดเรียงลำดับเมนู (อัปเกรดจำค่าแม่นยำ)
-        // ==========================================
         async function fetchForReorder() {
             try {
                 document.getElementById('reorder-container').innerHTML = '<p style="text-align:center;">กำลังโหลดข้อมูล...</p>';
-                // ใส่ ?t=... ทะลวง Cache ดึงข้อมูลสดใหม่เสมอ
                 const response = await fetch(`${BACKEND_URL}/api/menu?t=${new Date().getTime()}`);
                 let menus = await response.json();
 
-                // 🌟 ไม้ตาย: บังคับให้หน้าเว็บจัดเรียงตามเลขคิวที่ได้มาทันที!
                 menus.sort((a, b) => {
                     if ((a.category_order || 0) !== (b.category_order || 0)) {
                         return (a.category_order || 0) - (b.category_order || 0);
@@ -566,7 +664,6 @@
                     return (a.item_order || 0) - (b.item_order || 0);
                 });
                 
-                // ใช้ Map เพื่อล็อกกลุ่มให้อยู่หมวดเดียวกัน
                 const grouped = new Map();
                 menus.forEach(m => {
                     const cat = m.category || 'ทั่วไป';
@@ -620,47 +717,6 @@
                 const items = catEl.querySelectorAll('.sortable-item');
                 
                 items.forEach((itemEl, itemIndex) => {
-                    // 🌟 บังคับใส่ parseInt ให้คิวทั้งหมด ป้องกันฐานข้อมูลงง
-                    updates.push({ 
-                        id: parseInt(itemEl.getAttribute('data-id')), 
-                        category_order: parseInt(catIndex), 
-                        item_order: parseInt(itemIndex),
-                        category: catName 
-                    });
-                });
-            });
-
-            const btn = document.querySelector('#tab-reorder .btn-add');
-            const oldText = btn.innerHTML;
-            btn.innerHTML = '⏳ กำลังบันทึก...'; btn.disabled = true;
-
-            try {
-                const response = await fetch(`${BACKEND_URL}/api/admin/menu/reorder?t=${new Date().getTime()}`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: updates })
-                });
-                const result = await response.json();
-                if(result.success) {
-                    alert('✅ บันทึกลำดับเรียบร้อยแล้ว!');
-                    fetchForReorder(); 
-                } else { 
-                    alert('❌ บันทึกไม่สำเร็จ (อ่านสาเหตุใน Console): ' + result.error); 
-                    console.error("Backend Error:", result.error);
-                }
-            } catch (error) { 
-                alert('❌ ขาดการเชื่อมต่อกับเซิร์ฟเวอร์'); 
-            } 
-            finally { btn.innerHTML = oldText; btn.disabled = false; }
-        }
-
-        async function saveMenuOrder() {
-            const updates = [];
-            const categories = document.querySelectorAll('.sortable-category');
-            
-            categories.forEach((catEl, catIndex) => {
-                const catName = catEl.getAttribute('data-category'); 
-                const items = catEl.querySelectorAll('.sortable-item');
-                
-                items.forEach((itemEl, itemIndex) => {
                     const itemId = itemEl.getAttribute('data-id');
                     if(itemId) {
                         updates.push({ 
@@ -686,14 +742,13 @@
                 const result = await response.json();
                 
                 if(result.success) {
-                    // 🌟 แจ้งเตือนยอดที่บันทึกสำเร็จจริงๆ ให้เราเห็นชัดๆ
                     alert(`✅ บันทึกลำดับเรียบร้อย!\nอัปเดตเข้าฐานข้อมูลสำเร็จ ${result.updated} จากทั้งหมด ${result.total} รายการ`);
                     fetchForReorder(); 
                 } else { 
                     alert('❌ บันทึกไม่สำเร็จ: ' + result.error); 
                 }
             } catch (error) { 
-                alert('❌ ขาดการเชื่อมต่อกับเซิร์ฟเวอร์ (เช็คว่าอัปเดต Render หรือยัง)'); 
+                alert('❌ ขาดการเชื่อมต่อกับเซิร์ฟเวอร์'); 
             } 
             finally { btn.innerHTML = oldText; btn.disabled = false; }
         }
@@ -772,6 +827,286 @@
                 `;
             }
             document.getElementById('history-table-body').innerHTML = html;
+        }
+
+        // ==========================================
+        // 🎨 ฟังก์ชันเปลี่ยน UI สถานะเปิด-ปิดร้าน
+        // ==========================================
+        function toggleStoreStatusLabel() {
+            const isOpen = document.getElementById('set-is-open').checked;
+            const label = document.getElementById('store-status-label');
+            const container = document.getElementById('store-status-container');
+
+            if (isOpen) {
+                label.innerHTML = '🟢 สถานะร้าน (เปิดรับออเดอร์)';
+                label.style.color = '#2c3e50';
+                container.style.background = '#e8f4f8';
+                container.style.borderLeftColor = '#3498db';
+            } else {
+                label.innerHTML = '🔴 สถานะร้าน (ปิดรับออเดอร์แล้ว)';
+                label.style.color = '#c0392b';
+                container.style.background = '#fdedec';
+                container.style.borderLeftColor = '#e74c3c';
+            }
+        }
+
+        // ==========================================
+        // 🔊 ฟังก์ชันเทสเสียงแจ้งเตือน
+        // ==========================================
+        function testSound() {
+            const soundType = document.getElementById('set-alert-sound').value;
+            let audioUrl = '';
+            
+            // ใช้ลิงก์เสียงตัวอย่าง (หน้าจอครัวจะต้องใช้ลิงก์เดียวกันนี้)
+            if (soundType === 'bell') {
+                audioUrl = 'https://actions.google.com/sounds/v1/alarms/dinner_bell_triangle.ogg';
+            } else if (soundType === 'kitchen') {
+                audioUrl = 'https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg';
+            } else {
+                audioUrl = 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg'; // default
+            }
+
+            const audio = new Audio(audioUrl);
+            audio.play();
+        }
+
+        // ==========================================
+        // ⚙️ ระบบตั้งค่าร้านค้า (Store Settings) แบบจัดเต็ม
+        // ==========================================
+        async function fetchSettings() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/settings`);
+                const data = await response.json();
+                
+                document.getElementById('set-is-open').checked = data.is_store_open !== false; 
+                toggleStoreStatusLabel(); 
+                
+                document.getElementById('set-closed-message').value = data.closed_message || '';
+                document.getElementById('set-store-name').value = data.store_name || '';
+                document.getElementById('set-store-address').value = data.store_address || '';
+                document.getElementById('set-store-phone').value = data.store_phone || '';
+                document.getElementById('set-promptpay').value = data.promptpay_number || '';
+                document.getElementById('set-total-tables').value = data.total_tables || 10;
+                document.getElementById('set-points-rate').value = data.points_rate || 100;
+                document.getElementById('set-receipt-footer').value = data.receipt_footer || '';
+                document.getElementById('set-admin-pin').value = data.admin_pin || '123456';
+                
+                // 🌟 โหลดค่า SLA & Sound
+                document.getElementById('set-sla-warning').value = data.sla_warning_time || 10;
+                document.getElementById('set-sla-alert').value = data.sla_alert_time || 20;
+                document.getElementById('set-alert-sound').value = data.alert_sound || 'default';
+
+                document.getElementById('set-logo-base64').value = data.store_logo_url || '';
+                if (data.store_logo_url) {
+                    document.getElementById('set-logo-preview').src = data.store_logo_url;
+                    document.getElementById('set-logo-preview').style.display = 'block';
+                } else {
+                    document.getElementById('set-logo-preview').style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error("ดึงข้อมูลตั้งค่าไม่ได้:", error);
+            }
+        }
+
+        async function saveStoreSettings() {
+            const btn = document.querySelector('#tab-settings .btn-add');
+            const oldText = btn.innerHTML;
+            
+            const adminPin = document.getElementById('set-admin-pin').value;
+            if(!/^\d{6}$/.test(adminPin)) {
+                return alert("❌ รหัสผ่าน Admin ต้องเป็น 'ตัวเลข 6 หลัก' เท่านั้นครับ");
+            }
+
+            btn.innerHTML = '⏳ กำลังบันทึก...';
+            btn.disabled = true;
+
+            const payload = {
+                is_store_open: document.getElementById('set-is-open').checked,
+                store_logo_url: document.getElementById('set-logo-base64').value,
+                store_name: document.getElementById('set-store-name').value,
+                store_address: document.getElementById('set-store-address').value,
+                store_phone: document.getElementById('set-store-phone').value,
+                promptpay_number: document.getElementById('set-promptpay').value,
+                total_tables: parseInt(document.getElementById('set-total-tables').value) || 10,
+                points_rate: parseInt(document.getElementById('set-points-rate').value) || 100,
+                receipt_footer: document.getElementById('set-receipt-footer').value,
+                closed_message: document.getElementById('set-closed-message').value,
+                admin_pin: adminPin,
+                // 🌟 ส่งค่า SLA & Sound ไปเซฟ
+                sla_warning_time: parseInt(document.getElementById('set-sla-warning').value) || 10,
+                sla_alert_time: parseInt(document.getElementById('set-sla-alert').value) || 20,
+                alert_sound: document.getElementById('set-alert-sound').value
+            };
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/settings`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                if(result.success) {
+                    alert('✅ บันทึกการตั้งค่าร้านค้าเรียบร้อยแล้ว!');
+                } else {
+                    alert('❌ บันทึกไม่สำเร็จ');
+                }
+            } catch (error) {
+                alert('❌ ขาดการเชื่อมต่อกับเซิร์ฟเวอร์');
+            } finally {
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+            }
+        }
+        // ==========================================
+        // 🔊 ระบบเทสเสียง & อัปโหลดเสียงแจ้งเตือน
+        // ==========================================
+        function toggleCustomSoundBox() {
+            const val = document.getElementById('set-alert-sound').value;
+            document.getElementById('custom-sound-box').style.display = (val === 'custom') ? 'block' : 'none';
+        }
+
+        // อ่านไฟล์เสียงที่อัปโหลด
+        document.getElementById('set-custom-sound-file').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if(file.size > 2 * 1024 * 1024) { // ล็อกขนาดไม่เกิน 2MB ป้องกันเว็บค้าง
+                alert("❌ ไฟล์เสียงใหญ่เกินไปครับ (แนะนำไม่เกิน 2MB ให้ตัดสั้นๆ ประมาณ 1-3 วินาที)");
+                this.value = ''; return;
+            }
+            
+            document.getElementById('custom-sound-name').innerText = "✅ เลือกไฟล์: " + file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('set-custom-sound-base64').value = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function testSound() {
+            const soundType = document.getElementById('set-alert-sound').value;
+            let audioUrl = '';
+            
+            if (soundType === 'bell') {
+                audioUrl = 'https://actions.google.com/sounds/v1/alarms/dinner_bell_triangle.ogg';
+            } else if (soundType === 'kitchen') {
+                audioUrl = 'https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg';
+            } else if (soundType === 'custom') {
+                audioUrl = document.getElementById('set-custom-sound-base64').value;
+                if(!audioUrl) return alert("❌ กรุณาแนบไฟล์เสียงก่อนกดทดสอบครับ");
+            } else {
+                audioUrl = 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg'; 
+            }
+
+            const audio = new Audio(audioUrl);
+            audio.play();
+        }
+
+        // ==========================================
+        // ⚙️ ระบบดึง/เซฟ ข้อมูล (อัปเดตให้รองรับเสียงแบบ Custom)
+        // ==========================================
+        async function fetchSettings() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/settings`);
+                const data = await response.json();
+                
+                document.getElementById('set-is-open').checked = data.is_store_open !== false; 
+                toggleStoreStatusLabel(); 
+                
+                document.getElementById('set-closed-message').value = data.closed_message || '';
+                document.getElementById('set-store-name').value = data.store_name || '';
+                document.getElementById('set-store-address').value = data.store_address || '';
+                document.getElementById('set-store-phone').value = data.store_phone || '';
+                document.getElementById('set-promptpay').value = data.promptpay_number || '';
+                document.getElementById('set-total-tables').value = data.total_tables || 10;
+                document.getElementById('set-points-rate').value = data.points_rate || 100;
+                document.getElementById('set-receipt-footer').value = data.receipt_footer || '';
+                document.getElementById('set-admin-pin').value = data.admin_pin || '123456';
+                
+                document.getElementById('set-sla-warning').value = data.sla_warning_time || 10;
+                document.getElementById('set-sla-alert').value = data.sla_alert_time || 20;
+
+                // 🌟 เช็คว่าเสียงเป็นแบบระบบ หรืออัปโหลดเอง
+                const savedSound = data.alert_sound || 'default';
+                if (['default', 'bell', 'kitchen'].includes(savedSound)) {
+                    document.getElementById('set-alert-sound').value = savedSound;
+                } else {
+                    document.getElementById('set-alert-sound').value = 'custom';
+                    document.getElementById('set-custom-sound-base64').value = savedSound;
+                    document.getElementById('custom-sound-name').innerText = "🔊 มีไฟล์เสียงเดิมบันทึกไว้อยู่แล้ว";
+                }
+                toggleCustomSoundBox(); // ซ่อน/โชว์กล่องแนบไฟล์
+
+                document.getElementById('set-logo-base64').value = data.store_logo_url || '';
+                if (data.store_logo_url) {
+                    document.getElementById('set-logo-preview').src = data.store_logo_url;
+                    document.getElementById('set-logo-preview').style.display = 'block';
+                } else {
+                    document.getElementById('set-logo-preview').style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error("ดึงข้อมูลตั้งค่าไม่ได้:", error);
+            }
+        }
+
+        async function saveStoreSettings() {
+            const btn = document.querySelector('#tab-settings .btn-add');
+            const oldText = btn.innerHTML;
+            
+            const adminPin = document.getElementById('set-admin-pin').value;
+            if(!/^\d{6}$/.test(adminPin)) {
+                return alert("❌ รหัสผ่าน Admin ต้องเป็น 'ตัวเลข 6 หลัก' เท่านั้นครับ");
+            }
+
+            // 🌟 ดักจับเสียง Custom ว่าอัปโหลดหรือยัง
+            let finalAlertSound = document.getElementById('set-alert-sound').value;
+            if (finalAlertSound === 'custom') {
+                finalAlertSound = document.getElementById('set-custom-sound-base64').value;
+                if(!finalAlertSound) return alert("❌ คุณเลือกใช้อัปโหลดเสียงเอง แต่ยังไม่ได้เลือกไฟล์เสียงเลยครับ");
+            }
+
+            btn.innerHTML = '⏳ กำลังบันทึก...';
+            btn.disabled = true;
+
+            const payload = {
+                is_store_open: document.getElementById('set-is-open').checked,
+                store_logo_url: document.getElementById('set-logo-base64').value,
+                store_name: document.getElementById('set-store-name').value,
+                store_address: document.getElementById('set-store-address').value,
+                store_phone: document.getElementById('set-store-phone').value,
+                promptpay_number: document.getElementById('set-promptpay').value,
+                total_tables: parseInt(document.getElementById('set-total-tables').value) || 10,
+                points_rate: parseInt(document.getElementById('set-points-rate').value) || 100,
+                receipt_footer: document.getElementById('set-receipt-footer').value,
+                closed_message: document.getElementById('set-closed-message').value,
+                admin_pin: adminPin,
+                sla_warning_time: parseInt(document.getElementById('set-sla-warning').value) || 10,
+                sla_alert_time: parseInt(document.getElementById('set-sla-alert').value) || 20,
+                alert_sound: finalAlertSound // 🌟 เซฟเสียงลงฐานข้อมูล
+            };
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/settings`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                if(result.success) {
+                    alert('✅ บันทึกการตั้งค่าร้านค้าเรียบร้อยแล้ว!');
+                } else {
+                    alert('❌ บันทึกไม่สำเร็จ');
+                }
+            } catch (error) {
+                alert('❌ ขาดการเชื่อมต่อกับเซิร์ฟเวอร์');
+            } finally {
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+            }
         }
     </script>
 </body>

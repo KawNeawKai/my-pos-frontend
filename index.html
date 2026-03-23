@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Restaurant Menu - สั่งอาหาร</title>
+<title>สั่งอาหาร</title>
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 
 <style>
 body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8f8f8; padding-bottom: 90px; }
@@ -31,14 +32,12 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
 .header-section { text-align: center; margin-bottom: 40px; }
 .table-badge { background-color: #3498db; color: white; padding: 8px 25px; border-radius: 25px; font-size: 1.2em; font-weight: bold; display: none; margin: 0 auto; width: fit-content;}
 
-/* 🌟 เปลี่ยนแถบด้านล่างเป็นแบบปุ่มคู่ (ดูบิล & ตะกร้า) */
 .floating-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); display: flex; justify-content: space-between; padding: 10px; box-sizing: border-box; z-index: 1000; }
 .float-btn { flex: 1; margin: 0 5px; padding: 12px 10px; border-radius: 10px; font-weight: bold; font-size: 1.05em; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.3;}
 .btn-view-ordered { background: #34495e; color: white;}
 .btn-view-cart { background: #e63946; color: white; position: relative;}
 .cart-badge { position: absolute; top: -8px; right: -8px; background: #f1c40f; color: #2c3e50; font-size: 0.8em; padding: 4px 8px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2);}
 
-/* 🌟 ระบบ Modal กลางจอ */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(3px); padding: 15px; box-sizing: border-box;}
 .modal-content { background: white; padding: 25px; border-radius: 15px; width: 100%; max-width: 450px; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; }
 .modal-title { font-size: 1.4em; font-weight: bold; margin-bottom: 15px; text-align: center; border-bottom: 2px solid #f1f2f6; padding-bottom: 10px;}
@@ -52,22 +51,27 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
 .btn-cancel { background: #95a5a6; color: white; border: none; padding: 12px; border-radius: 8px; width: 40%; font-size: 1.1em; cursor: pointer; font-weight:bold;}
 .btn-confirm { background: #2ecc71; color: white; border: none; padding: 12px; border-radius: 8px; width: 60%; font-size: 1.1em; cursor: pointer; font-weight:bold;}
 
-/* Modal เริ่มเปิดโต๊ะ */
 .welcome-box { text-align: center; padding: 20px 10px;}
 .welcome-icon { font-size: 4em; margin-bottom: 10px;}
 .btn-start { background: #e63946; color: white; border: none; padding: 15px; width: 100%; font-size: 1.3em; font-weight: bold; border-radius: 10px; margin-top: 20px; cursor: pointer;}
 
-/* สไตล์กล่องติ๊ก Add-on */
 .checkbox-group { display: flex; flex-direction: column; gap: 8px; background: #fdfdfd; padding: 10px; border-radius: 8px; border: 1px solid #eee; font-size: 0.9em;}
 .checkbox-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: #34495e;}
 .checkbox-group input[type="checkbox"] { transform: scale(1.3); accent-color: #e63946; cursor: pointer;}
 .note-input { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-family: inherit; font-size: 0.9em; width: 100%; box-sizing: border-box; background: #f8f9fa;}
 
-/* ป้ายสถานะในบิล */
 .badge-served { background: #d1ffd6; color: #27ae60; font-size: 0.8em; padding: 3px 8px; border-radius: 10px; display: inline-block; margin-top: 5px;}
 .badge-pending { background: #fff4c2; color: #f39c12; font-size: 0.8em; padding: 3px 8px; border-radius: 10px; display: inline-block; margin-top: 5px;}
 
-/* 📱 โหมดปรับขนาดสำหรับหน้าจอมือถือ */
+/* 🌟 สไตล์กล่องแจ้งเตือน ร้านปิด (บังเต็มจอ ทับทุกอย่าง) */
+#store-closed-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(44, 62, 80, 0.95); z-index: 9999; justify-content: center; align-items: center; 
+    color: white; text-align: center; flex-direction: column; padding: 20px; box-sizing: border-box;
+    backdrop-filter: blur(8px);
+}
+.closed-icon { font-size: 6em; margin-bottom: 10px; }
+
 @media (max-width: 600px) {
     .container { padding: 20px 10px; } 
     h1 { font-size: 26px; } 
@@ -91,14 +95,20 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
     .btn-cancel, .btn-confirm { padding: 12px 10px; font-size: 1em; }
 }
 </style>
-<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 </head>
 
 <body>
 
+<div id="store-closed-overlay">
+    <div class="closed-icon">😴</div>
+    <h1 style="color: #e74c3c; margin-bottom: 10px;">ขออภัย ตอนนี้ครัวปิดแล้วนะครับ</h1>
+    <p style="font-size: 1.2em; color: #bdc3c7;">ไว้กลับมาอุดหนุนใหม่โอกาสหน้านะครับ</p>
+</div>
+
 <div class="container">
     <div class="header-section">
-        <h1>🍽️ Restaurant Menu</h1>
+        <img id="store-logo-img" src="" style="display:none; max-height: 90px; margin: 0 auto 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h1 id="store-name-display">🍽️ Menu</h1>
         <div id="table-display" class="table-badge"></div>
     </div>
     <div id="menu-container"><p style="text-align: center;">กำลังโหลดเมนูอร่อยๆ...</p></div>
@@ -180,36 +190,53 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
     };
 
     // ==========================================
-    // 🌟 ระบบเช็คสถานะโต๊ะ (ว่าเปิดบิลหรือยัง?)
+    // 🌟 ระบบดึงการตั้งค่าร้าน (เปิด/ปิดร้าน + โลโก้)
     // ==========================================
+    async function fetchSettings() {
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/settings?t=${new Date().getTime()}`);
+            const settings = await response.json();
+            
+            // 1. เช็คว่าร้านปิดอยู่หรือเปล่า? ถ้าปิด ให้โชว์จอดำทันที!
+            if (settings.is_store_open === false) {
+                document.getElementById('store-closed-overlay').style.display = 'flex';
+                // ปิด Modal อื่นๆ ที่อาจจะค้างอยู่ด้วย
+                document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+                document.getElementById('store-closed-overlay').style.display = 'flex';
+            } else {
+                document.getElementById('store-closed-overlay').style.display = 'none';
+            }
+
+            // 2. ดึงโลโก้และชื่อร้านมาแสดงผล
+            if (settings.store_name) {
+                document.getElementById('store-name-display').innerText = settings.store_name;
+            }
+            if (settings.store_logo_url) {
+                document.getElementById('store-logo-img').src = settings.store_logo_url;
+                document.getElementById('store-logo-img').style.display = 'block';
+            }
+
+        } catch (error) {
+            console.error("ดึงตั้งค่าไม่สำเร็จ", error);
+        }
+    }
+
     async function checkTableStatus() {
         if (!currentTable) return;
         try {
             const response = await fetch(`${BACKEND_URL}/api/table/${currentTable}/status?t=${new Date().getTime()}`);
             const data = await response.json();
 
-            if (!data.isOpen) {
-                // ถ้าโต๊ะว่าง หรือเพิ่งจ่ายเงิน ให้เด้ง Welcome
-                document.getElementById('welcome-modal').style.display = 'flex';
-                document.getElementById('ordered-total').innerText = '0';
-            } else {
-                // ถ้ามีออเดอร์ค้างอยู่ ให้อัปเดตรายการที่สั่งไปแล้ว
-                updateOrderedUI(data.order);
+            // เช็คก่อนว่าร้านปิดไหม ถ้าไม่ปิดค่อยแสดง Welcome
+            if(document.getElementById('store-closed-overlay').style.display !== 'flex') {
+                if (!data.isOpen) {
+                    document.getElementById('welcome-modal').style.display = 'flex';
+                    document.getElementById('ordered-total').innerText = '0';
+                } else {
+                    updateOrderedUI(data.order);
+                }
             }
         } catch (error) { console.error("ไม่สามารถเช็คสถานะโต๊ะได้"); }
-        // ==========================================
-        // 🌟 ระบบรับคำสั่ง "เคลียร์โต๊ะ" จากหน้าแคชเชียร์
-        // ==========================================
-    const socket = io(BACKEND_URL);
-
-    // เมื่อแคชเชียร์กดจ่ายเงิน ระบบหลังบ้านจะส่งสัญญาณ 'clear_table' มาพร้อมกับเลขโต๊ะ
-    socket.on('clear_table', (clearedTableId) => {
-        // เช็คว่าโต๊ะที่แคชเชียร์กดคิดเงิน ตรงกับโต๊ะที่มือถือเครื่องนี้เปิดอยู่ไหม?
-        if (currentTable && parseInt(currentTable) === parseInt(clearedTableId)) {
-            // ถ้ารหัสโต๊ะตรงกัน สั่งให้มือถือ "รีเฟรชหน้าเว็บตัวเอง" ทันที!
-            window.location.reload(); 
-        }
-    });
     }
 
     function updateOrderedUI(order) {
@@ -251,9 +278,6 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
         document.getElementById('ordered-modal').style.display = 'flex';
     }
 
-    // ==========================================
-    // 🛒 ระบบดึงเมนูและตะกร้า
-    // ==========================================
     async function fetchMenu() {
         try {
             const response = await fetch(`${BACKEND_URL}/api/menu?t=${new Date().getTime()}`);
@@ -334,21 +358,17 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
         cart[id].qty += delta;
         if (cart[id].qty <= 0) {
             cart[id].qty = 0; 
-            delete cart[id]; // ลบออกจากตะกร้าถ้าเป็น 0
+            delete cart[id]; 
         }
 
-        // อัปเดตตัวเลขทุกจุดที่โชว์ ID นี้ (ทั้งหน้ารวม และหน้า Modal)
         const displayElements = document.querySelectorAll(`.qty-display-${id}`);
         displayElements.forEach(el => el.innerText = cart[id] ? cart[id].qty : 0);
         
-        // อัปเดต Subtotal ใน Modal (ถ้าเปิดอยู่)
         const subtotalElement = document.getElementById(`modal-subtotal-${id}`);
         if (subtotalElement) subtotalElement.innerText = cart[id] ? `฿${cart[id].qty * cart[id].price}` : '฿0';
 
-        // ซ่อนแถวใน Modal ถ้าถูกลบจนเหลือ 0
         if (!cart[id] && document.getElementById(`modal-row-${id}`)) {
             document.getElementById(`modal-row-${id}`).style.display = 'none';
-            // ถ้าลบจนเกลี้ยงตะกร้า ให้ปิด Modal ทิ้งเลย
             if(Object.keys(cart).length === 0) closeModal('summary-modal');
         }
 
@@ -369,7 +389,6 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
             badge.style.display = 'none';
         }
         
-        // เช็คเปิดปิดปุ่มส่งเข้าครัว
         const btnSubmit = document.getElementById('real-checkout-btn');
         if (btnSubmit) {
             btnSubmit.disabled = totalQty === 0;
@@ -391,7 +410,6 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
                 const subtotal = cart[id].qty * cart[id].price;
                 let addonCheckboxes = '';
                 
-                // ระบบ Add-on ของคุณ
                 let matchedAddons = globalAddons.filter(a => {
                     if (!a.target_categories) return false;
                     let targets = a.target_categories.toLowerCase().split(',').map(t => t.trim());
@@ -408,7 +426,6 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
                     </label>`;
                 });
 
-                // 🌟 แทรกปุ่มเพิ่มลด (+/-) เข้าไปใน Modal ด้วย
                 html += `
                     <div id="modal-row-${id}" class="modal-item-row" style="margin-bottom: 20px; border-bottom: 2px dashed #eee; padding-bottom: 15px;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
@@ -459,7 +476,6 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
                 let finalNote = checkedNoteTexts.join(', '); 
                 if (typedNote) finalNote = finalNote ? finalNote + ", " + typedNote : typedNote;
 
-                // ส่งจานหลัก
                 await fetch(`${BACKEND_URL}/api/orders`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -470,7 +486,6 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
                     })
                 });
 
-                // แอบส่งแอดออนให้คิดเงิน
                 for (let addonId of addonsToCharge) {
                     await fetch(`${BACKEND_URL}/api/orders`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -487,12 +502,11 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
 
             alert('✅ ส่งออเดอร์เข้าครัวเรียบร้อยแล้วครับ!');
             
-            // ล้างตะกร้า เคลียร์ปุ่ม และรีเฟรชหน้าบิล
             cart = {}; 
             closeModal('summary-modal'); 
-            fetchMenu(); // รีเฟรชเมนูเพื่อให้ตัวเลขที่หน้าหลักกลับเป็น 0
+            fetchMenu(); 
             updateCartUI();
-            checkTableStatus(); // ดึงข้อมูลอัปเดตไปโชว์ในปุ่ม "บิลที่สั่งไปแล้ว"
+            checkTableStatus(); 
             
         } catch(error) {
             alert('❌ เกิดข้อผิดพลาด ไม่สามารถส่งข้อมูลได้');
@@ -501,9 +515,28 @@ h1 { text-align: center; margin-bottom: 20px; font-size: 36px; color: #333; }
         }
     }
 
-    // เริ่มต้นระบบ
-    fetchMenu();
-    checkTableStatus(); // โหลดหน้าเว็บปุ๊บ เช็คสถานะโต๊ะทันที
+    // ==========================================
+    // 🌟 ระบบ Socket รอฟังเสียงกระซิบจากหลังบ้าน
+    // ==========================================
+    const socket = io(BACKEND_URL);
+
+    // 1. รับฟังการเปลี่ยนตั้งค่า (เช่น แอดมินกดสวิตช์ปิดร้าน) ให้หน้านี้ดึงข้อมูลมาเช็คทันที
+    socket.on('update_settings', () => {
+        fetchSettings(); 
+    });
+
+    // 2. รับฟังการจ่ายเงิน (บังคับรีเฟรชถ้าแคชเชียร์เก็บเงินแล้ว)
+    socket.on('clear_table', (clearedTableId) => {
+        if (currentTable && parseInt(currentTable) === parseInt(clearedTableId)) {
+            window.location.reload(); 
+        }
+    });
+
+    // ลำดับการทำงานเมื่อโหลดหน้าเว็บ
+    fetchSettings().then(() => {
+        fetchMenu();
+        checkTableStatus(); 
+    });
 </script>
 
 </body>
