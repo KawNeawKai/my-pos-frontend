@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการหลังร้าน (Admin)</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background-color: #f4f6f9; color: #333;}
+        
+        /* --- ระบบ Login --- */
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; display: flex; justify-content: center; align-items: center; z-index: 9999;}
+        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; width: 90%; max-width: 350px; box-sizing: border-box;}
+        .login-box h2 { margin-top: 0; color: #2c3e50; margin-bottom: 20px;}
+        .login-input { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 8px; font-size: 1.2em; text-align: center; box-sizing: border-box;}
+        .login-btn { background: #e74c3c; color: white; border: none; padding: 12px; width: 100%; font-size: 1.2em; border-radius: 8px; cursor: pointer; font-weight: bold;}
+        
+        /* =========================================
+           🔢 ระบบ Numpad ทัชสกรีน
+           ========================================= */
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .num-btn {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: all 0.1s;
+            user-select: none; /* ป้องกันการคลุมดำเวลากดรัวๆ */
+        }
+        .num-btn:active {
+            background: #dee2e6;
+            transform: scale(0.92); /* เอฟเฟกต์ปุ่มยุบเวลากด */
+        }
+        .action-btn {
+            background: #ecf0f1;
+            color: #e74c3c;
+        }
+
+        /* --- โครงสร้างหน้า Admin --- */
+        #admin-layout { display: none; display: flex; height: 100vh; overflow: hidden;}
+        
+        /* แถบเมนูด้านซ้าย */
+        .sidebar { width: 250px; background: #2c3e50; color: white; display: flex; flex-direction: column; flex-shrink: 0;}
+        .sidebar h2 { text-align: center; padding: 20px 0; margin: 0; background: #1a252f; font-size: 1.5em; border-bottom: 2px solid #e74c3c;}
+        .nav-btn { background: none; border: none; color: white; padding: 20px; text-align: left; font-size: 1.1em; cursor: pointer; border-bottom: 1px solid #34495e; transition: 0.2s; display: flex; align-items: center; gap: 10px;}
+        .nav-btn:hover, .nav-btn.active { background: #34495e; border-left: 5px solid #e74c3c;}
+        .logout-btn { margin-top: auto; background: #c0392b; text-align: center; justify-content: center;}
+        
+        /* พื้นที่เนื้อหาด้านขวา */
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; background: #f4f6f9;}
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        
+        .header-action { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;}
+        .header-action h1 { margin: 0; color: #2c3e50; font-size: 1.8em;}
+        .btn-add { background: #2ecc71; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; font-weight: bold; white-space: nowrap;}
+        
+        /* --- ตารางข้อมูล --- */
+        .table-responsive { width: 100%; overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);}
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #ecf0f1; color: #2c3e50; font-weight: bold;}
+        tr:hover { background-color: #f9f9f9;}
+        
+        .img-preview { width: 50px; height: 50px; object-fit: cover; border-radius: 8px;}
+        .action-buttons { display: flex; gap: 5px; }
+        .btn-delete, .btn-edit { color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.9em; white-space: nowrap;}
+        .btn-delete { background: #e74c3c; }
+        .btn-edit { background: #f39c12; }
+        
+        /* สวิตช์เปิดปิดของหมด */
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; flex-shrink: 0;}
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #2ecc71; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #e74c3c; } 
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        /* =========================================
+           🌟 ระบบ Pop-up Modal (เด้งกลางจอ)
+           ========================================= */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); padding: 20px; box-sizing: border-box;}
+        .modal-box { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative;}
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5em; cursor: pointer; color: #aaa; background: none; border: none;}
+        .close-btn:hover { color: #e74c3c;}
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #2c3e50;}
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-family: inherit; font-size: 1em;}
+        
+        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%;}
+        .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer;}
+        .btn-upload { background-color: #34495e; color: white; padding: 10px; border-radius: 5px; text-align: center; display: block; font-weight: bold; cursor: pointer; border: 2px dashed #bdc3c7;}
+
+        /* ตัวกรองวันที่ (Filter) */
+        .filter-container { display: flex; gap: 10px; align-items: center; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-wrap: wrap; width: 100%; box-sizing: border-box;}
+        .filter-input { padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit; font-size: 1em; flex: 1; min-width: 120px;}
+
+        /* CSS สำหรับ Drag & Drop */
+        .sortable-category { background: white; border: 1px solid #ddd; margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);}
+        .sortable-category-header { background: #34495e; color: white; padding: 15px; font-weight: bold; cursor: grab; display: flex; align-items: center; gap: 10px;}
+        .sortable-item-list { padding: 10px; min-height: 50px; background: #fdfdfd; }
+        .sortable-item { background: white; border: 1px solid #eee; padding: 10px; margin-bottom: 8px; border-radius: 5px; cursor: grab; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .drag-handle { font-size: 1.2em; color: #95a5a6; padding: 0 5px; }
+        .sortable-ghost { opacity: 0.4; background: #ecf0f1; border: 2px dashed #3498db;} 
+
+        /* =========================================
+           📱 มือถือและแท็บเล็ต (Responsive Design)
+           ========================================= */
+        @media (max-width: 768px) {
+            #admin-layout { flex-direction: column; overflow: auto; }
+            
+            /* เปลี่ยนแถบเมนูด้านซ้ายให้มาอยู่ด้านบน เลื่อนซ้ายขวาได้ */
+            .sidebar { width: 100%; flex-direction: row; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; background: #1a252f; }
+            .sidebar h2 { display: none; } /* ซ่อนคำว่า ระบบจัดการหลังร้าน */
+            .nav-btn { flex: 0 0 auto; padding: 15px; border-bottom: none; border-right: 1px solid #2c3e50; font-size: 1em; }
+            .nav-btn:hover, .nav-btn.active { border-left: none; border-bottom: 4px solid #e74c3c; background: #2c3e50; }
+            .logout-btn { margin-left: auto; border-right: none;}
+
+            .main-content { padding: 15px; }
+            .header-action { flex-direction: column; align-items: flex-start; }
+            .header-action button { width: 100%; }
+            
+            /* ลดขนาดฟอนต์ในมือถือ */
+            th, td { padding: 10px; font-size: 0.9em; }
+            .header-action h1 { font-size: 1.5em; margin-bottom: 10px;}
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>🔒 ระบบผู้จัดการร้าน</h2>
+            <input type="password" id="admin-pin" class="login-input" placeholder="รหัสผ่าน (PIN)" maxlength="6" readonly style="letter-spacing: 5px; font-size: 1.5em; background: #fff;">
+            
+            <div class="numpad">
+                <button class="num-btn" onclick="appendPin('1')">1</button>
+                <button class="num-btn" onclick="appendPin('2')">2</button>
+                <button class="num-btn" onclick="appendPin('3')">3</button>
+                
+                <button class="num-btn" onclick="appendPin('4')">4</button>
+                <button class="num-btn" onclick="appendPin('5')">5</button>
+                <button class="num-btn" onclick="appendPin('6')">6</button>
+                
+                <button class="num-btn" onclick="appendPin('7')">7</button>
+                <button class="num-btn" onclick="appendPin('8')">8</button>
+                <button class="num-btn" onclick="appendPin('9')">9</button>
+                
+                <button class="num-btn action-btn" onclick="clearPin()">C</button>
+                <button class="num-btn" onclick="appendPin('0')">0</button>
+                <button class="num-btn action-btn" onclick="deletePin()">⌫</button>
+            </div>
+
+            <button class="login-btn" onclick="checkLogin()">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+
+    <div id="admin-layout">
+        <div class="sidebar">
+            <h2>ระบบจัดการร้าน</h2>
+            <button class="nav-btn active" onclick="switchTab('menu')">🍔 จัดการเมนู</button>
+            <button class="nav-btn" onclick="switchTab('reorder')">📑 จัดเรียงเมนู</button>
+            <button class="nav-btn" onclick="switchTab('history')">🧾 ประวัติบิล</button>
+            <button class="nav-btn" onclick="window.open('dashboard.html', '_blank')">📊 Dashboard</button>
+
+            <div style="margin: 10px 20px; border-top: 2px solid #34495e;"></div>
+            
+            <button class="nav-btn" style="color: #3498db;" onclick="window.open('index.html', '_blank')">📱 เมนูสั่งอาหาร </button>
+            <button class="nav-btn" style="color: #f39c12;" onclick="window.open('kitchen.html', '_blank')">👨‍🍳 ไปหน้าจอครัว</button>
+            <button class="nav-btn" style="color: #2ecc71;" onclick="window.open('cashier.html', '_blank')">💰 ไปหน้าแคชเชียร์</button>
+            
+            <button class="nav-btn logout-btn" style="margin-top: 20px;" onclick="logout()">🚪 ออกระบบ</button>
+        </div>
+
+        <div class="main-content">
+            
+            <div id="tab-menu" class="content-section active">
+                <div class="header-action">
+                    <h1>🍔 จัดการเมนูอาหาร</h1>
+                    <button class="btn-add" onclick="openModal('add-menu-modal')">+ เพิ่มเมนูใหม่</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>รูปภาพ</th>
+                                <th>ชื่อเมนู</th>
+                                <th>หมวดหมู่</th>
+                                <th>ราคา</th>
+                                <th style="text-align:center;">ของหมด?</th>
+                                <th style="text-align:center;">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="menu-table-body">
+                            <tr><td colspan="6" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="tab-reorder" class="content-section">
+                <div class="header-action">
+                    <h1>📑 จัดเรียงลำดับหน้าเมนูอาหาร</h1>
+                    <button class="btn-add" style="background:#f39c12;" onclick="saveMenuOrder()">💾 บันทึกลำดับใหม่</button>
+                </div>
+                
+                <div style="background: #e8f4f8; border-left: 5px solid #3498db; padding: 15px; margin-bottom: 20px; border-radius: 5px; font-size: 0.9em;">
+                    <strong>💡 ทริค:</strong> ลากแถบสีเข้มเพื่อสลับหมวดหมู่ หรือลากเมนูสีขาวเพื่อสลับคิวในหมวดหมู่นั้นๆ เสร็จแล้วกดปุ่มบันทึก
+                </div>
+
+                <div id="reorder-container">
+                    <p style="text-align:center;">กำลังโหลดข้อมูล...</p>
+                </div>
+            </div>
+
+            <div id="tab-history" class="content-section">
+                <div class="header-action">
+                    <h1>🧾 ประวัติบิลที่ชำระแล้ว</h1>
+                </div>
+                
+                <div class="filter-container" style="margin-bottom: 20px;">
+                    <label style="font-weight:bold; color:#2c3e50; width: 100%;">📅 ค้นหาช่วงวันที่:</label>
+                    <input type="date" id="history-start-date" class="filter-input" onchange="renderHistory()">
+                    <span style="font-weight:bold; color:#7f8c8d; text-align:center;">ถึง</span>
+                    <input type="date" id="history-end-date" class="filter-input" onchange="renderHistory()">
+                    <div style="display:flex; gap:10px; width: 100%;">
+                        <button class="btn-add" style="background:#e74c3c; flex:1;" onclick="resetHistoryFilter()">ล้างค้นหา</button>
+                        <button class="btn-add" style="background:#2ecc71; flex:1;" onclick="fetchHistory()">🔄 โหลดใหม่</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>เวลา</th>
+                                <th>โต๊ะ</th>
+                                <th>รายการอาหาร</th>
+                                <th>ยอดรวม</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <tr><td colspan="4" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-menu-modal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeModal('add-menu-modal')">✖</button>
+            <h3 style="margin-top:0; color:#2ecc71;">✨ เพิ่มเมนูใหม่</h3>
+            <div class="form-group"><label>ชื่อเมนู</label><input type="text" id="new-name" placeholder="ชื่อเมนู"></div>
+            <div class="form-group">
+                <label>หมวดหมู่</label>
+                <input type="text" id="new-category" list="category-list" placeholder="พิมพ์หมวดหมู่ หรือคำว่า addon">
+                <datalist id="category-list"></datalist>
+            </div>
+            <div class="form-group"><label>ราคา (บาท)</label><input type="number" id="new-price" placeholder="เช่น 150"></div>
+            
+            <div class="form-group" style="background:#fff3e0; padding:10px; border-radius:5px; border-left:4px solid #f39c12;">
+                <label>🎯 ผูกแอดออน (เฉพาะหมวดหมู่ Add-on)</label>
+                <input type="text" id="new-target" placeholder="เช่น สเต็ก (เว้นว่างไว้ถ้าเป็นจานหลัก)">
+            </div>
+
+            <div class="form-group">
+                <label>รูปภาพเมนู</label>
+                <div class="file-upload-wrapper">
+                    <span class="btn-upload">📷 คลิกเพื่อแนบไฟล์รูปภาพ</span>
+                    <input type="file" id="new-image-file" accept="image/*">
+                </div>
+                <input type="hidden" id="new-image-base64">
+                <img id="image-preview" style="display:none; max-width: 120px; margin-top: 10px; border-radius: 8px;">
+            </div>
+            
+            <button class="btn-add" style="width:100%; margin-top:10px; padding: 15px;" onclick="saveNewMenu()">บันทึกเมนูใหม่</button>
+        </div>
+    </div>
+
+    <div id="edit-menu-modal" class="modal-overlay">
+        <div class="modal-box" style="border-top: 5px solid #f39c12;">
+            <button class="close-btn" onclick="closeModal('edit-menu-modal')">✖</button>
+            <h3 style="margin-top:0; color: #f39c12;">✏️ แก้ไขเมนู</h3>
+            <input type="hidden" id="edit-id"> 
+            
+            <div class="form-group"><label>ชื่อเมนู</label><input type="text" id="edit-name"></div>
+            <div class="form-group"><label>หมวดหมู่</label><input type="text" id="edit-category" list="category-list"></div>
+            <div class="form-group"><label>ราคา (บาท)</label><input type="number" id="edit-price"></div>
+            
+            <div class="form-group" style="background:#fff3e0; padding:10px; border-radius:5px; border-left:4px solid #f39c12;">
+                <label>🎯 ผูกแอดออน (เฉพาะหมวดหมู่ Add-on)</label>
+                <input type="text" id="edit-target" placeholder="เช่น สเต็ก (เว้นว่างไว้ถ้าเป็นจานหลัก)">
+            </div>
+
+            <div class="form-group">
+                <label>เปลี่ยนรูปภาพ (เว้นว่างไว้ถ้าใช้รูปเดิม)</label>
+                <div class="file-upload-wrapper">
+                    <span class="btn-upload" style="background-color: #3498db; border-color: #2980b9;">📷 เลือกรูปภาพใหม่</span>
+                    <input type="file" id="edit-image-file" accept="image/*">
+                </div>
+                <input type="hidden" id="edit-image-base64">
+                <img id="edit-image-preview" style="display:block; max-width: 120px; margin-top: 10px; border-radius: 8px;">
+            </div>
+            
+            <button class="btn-add" style="width:100%; margin-top:10px; padding: 15px; background: #f39c12;" onclick="saveEditMenu()">บันทึกการแก้ไข</button>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://my-pos-backend-0s18.onrender.com';
+        let allHistoryData = []; 
+        let sortableInstances = []; 
+
+        // ==========================================
+        // 🔢 ฟังก์ชันสำหรับ Numpad
+        // ==========================================
+        function appendPin(num) {
+            const pinInput = document.getElementById('admin-pin');
+            if (pinInput.value.length < 6) {
+                pinInput.value += num;
+            }
+            // ถ้ารหัสครบ 6 ตัว ให้ทำการกด Login ให้อัตโนมัติเลย (ไม่ต้องกดปุ่มเข้าสู่ระบบซ้ำ)
+            if (pinInput.value.length === 6) {
+                setTimeout(checkLogin, 100); 
+            }
+        }
+
+        function clearPin() {
+            document.getElementById('admin-pin').value = '';
+        }
+
+        function deletePin() {
+            const pinInput = document.getElementById('admin-pin');
+            pinInput.value = pinInput.value.slice(0, -1);
+        }
+
+        // ==========================================
+
+        function checkLogin() {
+            const pin = document.getElementById('admin-pin').value;
+            if (pin === "123456") {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('admin-layout').style.display = 'flex';
+                fetchMenus(); 
+            } else { alert("❌ รหัสผ่านไม่ถูกต้อง!"); }
+        }
+
+        function logout() {
+            window.location.reload(); // รีเฟรชหน้าเว็บเพื่อเคลียร์ค่าทั้งหมดตอนออก
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            event.currentTarget.classList.add('active'); // อัปเดตปุ่มที่ถูกกด
+            
+            if(tabName === 'history') fetchHistory();
+            if(tabName === 'menu') fetchMenus();
+            if(tabName === 'reorder') fetchForReorder(); 
+        }
+
+        // ==========================================
+        // 🌟 ระบบจัดการ Modal 
+        // ==========================================
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // ล็อกฉากหลังไม่ให้เลื่อน
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            document.body.style.overflow = 'auto'; // ปลดล็อกฉากหลัง
+            
+            // ล้างค่าฟอร์มตอนปิด
+            if(modalId === 'add-menu-modal') {
+                document.getElementById('new-name').value = '';
+                document.getElementById('new-category').value = '';
+                document.getElementById('new-price').value = '';
+                document.getElementById('new-target').value = '';
+                document.getElementById('new-image-file').value = '';
+                document.getElementById('new-image-base64').value = '';
+                document.getElementById('image-preview').style.display = 'none';
+            }
+        }
+
+        // ==========================================
+        // 🍔 ระบบจัดการเมนู 
+        // ==========================================
+        async function fetchMenus() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/menu?t=${new Date().getTime()}`);
+                const menus = await response.json();
+                
+                let html = '';
+                let categories = new Set(); 
+
+                menus.forEach(m => {
+                    if (m.category && m.category.toLowerCase() !== 'addon') categories.add(m.category); 
+                    const imgUrl = m.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100';
+                    const isChecked = m.is_out_of_stock ? 'checked' : '';
+                    
+                    html += `
+                        <tr>
+                            <td><img src="${imgUrl}" class="img-preview"></td>
+                            <td><strong>${m.name}</strong><br><small style="color:#7f8c8d;">${m.category}</small></td>
+                            <td style="display:none;"></td> <td>฿${m.price}</td>
+                            <td style="text-align:center;">
+                                <label class="switch">
+                                    <input type="checkbox" ${isChecked} onchange="toggleStock(${m.id}, this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td style="text-align:center;">
+                                <div class="action-buttons" style="justify-content:center;">
+                                    <button class="btn-edit" onclick="triggerEditForm(${m.id}, '${m.name}', '${m.category}', ${m.price}, '${imgUrl}', '${m.target_categories || ''}')">✏️</button>
+                                    <button class="btn-delete" onclick="deleteMenu(${m.id}, '${m.name}')">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                document.getElementById('menu-table-body').innerHTML = html;
+
+                let datalistHtml = '';
+                categories.forEach(cat => { datalistHtml += `<option value="${cat}">`; });
+                document.getElementById('category-list').innerHTML = datalistHtml;
+
+            } catch (err) { console.error("Error loading menu", err); }
+        }
+
+        // ฟังก์ชันแปลงและย่อรูปภาพ
+        function handleImageUpload(inputId, base64Id, previewId) {
+            document.getElementById(inputId).addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const scaleSize = 500 / img.width;
+                        canvas.width = 500;
+                        canvas.height = img.height * scaleSize;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const base64Str = canvas.toDataURL('image/jpeg', 0.8);
+                        
+                        document.getElementById(base64Id).value = base64Str;
+                        document.getElementById(previewId).src = base64Str;
+                        document.getElementById(previewId).style.display = 'block';
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            });
+        }
+        handleImageUpload('new-image-file', 'new-image-base64', 'image-preview');
+        handleImageUpload('edit-image-file', 'edit-image-base64', 'edit-image-preview');
+
+        async function saveNewMenu() {
+            const data = {
+                name: document.getElementById('new-name').value,
+                category: document.getElementById('new-category').value,
+                price: parseFloat(document.getElementById('new-price').value),
+                image_url: document.getElementById('new-image-base64').value,
+                target_categories: document.getElementById('new-target').value
+            };
+            if(!data.name || !data.price || !data.category) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+            if(!data.image_url) data.image_url = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/menu`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if(result.success) {
+                    alert('✅ เพิ่มเมนูสำเร็จ!');
+                    closeModal('add-menu-modal'); fetchMenus(); 
+                } else { alert('❌ ไม่สามารถเพิ่มเมนูได้: ' + result.error); }
+            } catch (error) { alert('❌ ขาดการเชื่อมต่อกับเซิร์ฟเวอร์'); }
+        }
+
+        function triggerEditForm(id, name, category, price, imageUrl, targetCategories) {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-name').value = name;
+            document.getElementById('edit-category').value = category;
+            document.getElementById('edit-price').value = price;
+            document.getElementById('edit-target').value = targetCategories || '';
+            document.getElementById('edit-image-base64').value = imageUrl;
+            document.getElementById('edit-image-preview').src = imageUrl;
+            
+            openModal('edit-menu-modal');
+        }
+
+        async function saveEditMenu() {
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                name: document.getElementById('edit-name').value,
+                category: document.getElementById('edit-category').value,
+                price: parseFloat(document.getElementById('edit-price').value),
+                image_url: document.getElementById('edit-image-base64').value,
+                target_categories: document.getElementById('edit-target').value
+            };
+            if(!data.name || !data.price || !data.category) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/menu/${id}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if(result.success) {
+                    alert('✅ อัปเดตเมนูเรียบร้อยแล้ว!');
+                    closeModal('edit-menu-modal'); fetchMenus(); 
+                } else { alert('❌ แก้ไขไม่สำเร็จ: ' + result.error); }
+            } catch (error) { alert('❌ ขาดการเชื่อมต่อกับเซิร์ฟเวอร์'); }
+        }
+
+        async function toggleStock(id, isOutOfStock) {
+            await fetch(`${BACKEND_URL}/api/admin/menu/stock/${id}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_out_of_stock: isOutOfStock })
+            });
+            fetchMenus();
+        }
+
+        async function deleteMenu(id, name) {
+            if(confirm(`⚠️ แน่ใจหรือไม่ว่าจะลบ "${name}" ถาวร?`)) {
+                await fetch(`${BACKEND_URL}/api/admin/menu/${id}`, { method: 'DELETE' });
+                fetchMenus();
+            }
+        }
+
+        // ==========================================
+        // 📑 ระบบจัดเรียงลำดับเมนู 
+        // ==========================================
+        // ==========================================
+        // 📑 ระบบจัดเรียงลำดับเมนู (อัปเกรดจำค่าแม่นยำ)
+        // ==========================================
+        async function fetchForReorder() {
+            try {
+                document.getElementById('reorder-container').innerHTML = '<p style="text-align:center;">กำลังโหลดข้อมูล...</p>';
+                // ใส่ ?t=... ทะลวง Cache ดึงข้อมูลสดใหม่เสมอ
+                const response = await fetch(`${BACKEND_URL}/api/menu?t=${new Date().getTime()}`);
+                let menus = await response.json();
+
+                // 🌟 ไม้ตาย: บังคับให้หน้าเว็บจัดเรียงตามเลขคิวที่ได้มาทันที!
+                menus.sort((a, b) => {
+                    if ((a.category_order || 0) !== (b.category_order || 0)) {
+                        return (a.category_order || 0) - (b.category_order || 0);
+                    }
+                    return (a.item_order || 0) - (b.item_order || 0);
+                });
+                
+                // ใช้ Map เพื่อล็อกกลุ่มให้อยู่หมวดเดียวกัน
+                const grouped = new Map();
+                menus.forEach(m => {
+                    const cat = m.category || 'ทั่วไป';
+                    if (!grouped.has(cat)) grouped.set(cat, []);
+                    grouped.get(cat).push(m);
+                });
+
+                let html = '';
+                grouped.forEach((items, cat) => {
+                    html += `
+                        <div class="sortable-category" data-category="${cat}">
+                            <div class="sortable-category-header">
+                                <span class="drag-handle">☰</span> 📁 หมวดหมู่: ${cat}
+                            </div>
+                            <div class="sortable-item-list">
+                    `;
+                    items.forEach(m => {
+                        const imgUrl = m.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100';
+                        html += `
+                            <div class="sortable-item" data-id="${m.id}">
+                                <span class="drag-handle">↕</span>
+                                <img src="${imgUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:5px;">
+                                <strong style="font-size:0.9em;">${m.name}</strong>
+                            </div>
+                        `;
+                    });
+                    html += `</div></div>`;
+                });
+                
+                document.getElementById('reorder-container').innerHTML = html;
+
+                sortableInstances.forEach(inst => inst.destroy());
+                sortableInstances = [];
+
+                const catContainer = document.getElementById('reorder-container');
+                sortableInstances.push(new Sortable(catContainer, { animation: 150, handle: '.sortable-category-header', ghostClass: 'sortable-ghost' }));
+
+                document.querySelectorAll('.sortable-item-list').forEach(list => {
+                    sortableInstances.push(new Sortable(list, { animation: 150, handle: '.sortable-item', ghostClass: 'sortable-ghost' }));
+                });
+
+            } catch (error) { console.error("Error loading for reorder", error); }
+        }
+
+        async function saveMenuOrder() {
+            const updates = [];
+            const categories = document.querySelectorAll('.sortable-category');
+            
+            categories.forEach((catEl, catIndex) => {
+                const catName = catEl.getAttribute('data-category'); 
+                const items = catEl.querySelectorAll('.sortable-item');
+                
+                items.forEach((itemEl, itemIndex) => {
+                    // 🌟 บังคับใส่ parseInt ให้คิวทั้งหมด ป้องกันฐานข้อมูลงง
+                    updates.push({ 
+                        id: parseInt(itemEl.getAttribute('data-id')), 
+                        category_order: parseInt(catIndex), 
+                        item_order: parseInt(itemIndex),
+                        category: catName 
+                    });
+                });
+            });
+
+            const btn = document.querySelector('#tab-reorder .btn-add');
+            const oldText = btn.innerHTML;
+            btn.innerHTML = '⏳ กำลังบันทึก...'; btn.disabled = true;
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/menu/reorder?t=${new Date().getTime()}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: updates })
+                });
+                const result = await response.json();
+                if(result.success) {
+                    alert('✅ บันทึกลำดับเรียบร้อยแล้ว!');
+                    fetchForReorder(); 
+                } else { 
+                    alert('❌ บันทึกไม่สำเร็จ (อ่านสาเหตุใน Console): ' + result.error); 
+                    console.error("Backend Error:", result.error);
+                }
+            } catch (error) { 
+                alert('❌ ขาดการเชื่อมต่อกับเซิร์ฟเวอร์'); 
+            } 
+            finally { btn.innerHTML = oldText; btn.disabled = false; }
+        }
+
+        async function saveMenuOrder() {
+            const updates = [];
+            const categories = document.querySelectorAll('.sortable-category');
+            
+            categories.forEach((catEl, catIndex) => {
+                const catName = catEl.getAttribute('data-category'); 
+                const items = catEl.querySelectorAll('.sortable-item');
+                
+                items.forEach((itemEl, itemIndex) => {
+                    const itemId = itemEl.getAttribute('data-id');
+                    if(itemId) {
+                        updates.push({ 
+                            id: parseInt(itemId), 
+                            category_order: parseInt(catIndex), 
+                            item_order: parseInt(itemIndex),
+                            category: catName 
+                        });
+                    }
+                });
+            });
+
+            if (updates.length === 0) return alert('❌ ไม่พบข้อมูลเมนูที่จะจัดเรียง');
+
+            const btn = document.querySelector('#tab-reorder .btn-add');
+            const oldText = btn.innerHTML;
+            btn.innerHTML = '⏳ กำลังบันทึก...'; btn.disabled = true;
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/menu/reorder?t=${new Date().getTime()}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: updates })
+                });
+                const result = await response.json();
+                
+                if(result.success) {
+                    // 🌟 แจ้งเตือนยอดที่บันทึกสำเร็จจริงๆ ให้เราเห็นชัดๆ
+                    alert(`✅ บันทึกลำดับเรียบร้อย!\nอัปเดตเข้าฐานข้อมูลสำเร็จ ${result.updated} จากทั้งหมด ${result.total} รายการ`);
+                    fetchForReorder(); 
+                } else { 
+                    alert('❌ บันทึกไม่สำเร็จ: ' + result.error); 
+                }
+            } catch (error) { 
+                alert('❌ ขาดการเชื่อมต่อกับเซิร์ฟเวอร์ (เช็คว่าอัปเดต Render หรือยัง)'); 
+            } 
+            finally { btn.innerHTML = oldText; btn.disabled = false; }
+        }
+
+        // ==========================================
+        // 🧾 ระบบดูประวัติบิล
+        // ==========================================
+        async function fetchHistory() {
+            try {
+                document.getElementById('history-table-body').innerHTML = '<tr><td colspan="4" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>';
+                const response = await fetch(`${BACKEND_URL}/api/admin/history`);
+                allHistoryData = await response.json(); 
+                renderHistory(); 
+            } catch (err) {
+                document.getElementById('history-table-body').innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">โหลดข้อมูลล้มเหลว</td></tr>';
+            }
+        }
+
+        function resetHistoryFilter() {
+            document.getElementById('history-start-date').value = '';
+            document.getElementById('history-end-date').value = '';
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const startDateVal = document.getElementById('history-start-date').value;
+            const endDateVal = document.getElementById('history-end-date').value;
+
+            let filteredData = allHistoryData; 
+            if (startDateVal || endDateVal) {
+                filteredData = allHistoryData.filter(order => {
+                    const orderDate = new Date(order.created_at);
+                    orderDate.setHours(0,0,0,0); 
+                    let isPass = true;
+                    if (startDateVal) {
+                        const start = new Date(startDateVal); start.setHours(0,0,0,0);
+                        if (orderDate < start) isPass = false; 
+                    }
+                    if (endDateVal) {
+                        const end = new Date(endDateVal); end.setHours(0,0,0,0);
+                        if (orderDate > end) isPass = false; 
+                    }
+                    return isPass;
+                });
+            }
+
+            let html = ''; let totalRevenue = 0; 
+            filteredData.forEach(order => {
+                const date = new Date(order.created_at).toLocaleString('th-TH');
+                const table = order.tables?.table_number || '-';
+                let itemsText = ''; let total = 0;
+                order.order_items.forEach(item => {
+                    itemsText += `${item.menu_items.name} (x${item.quantity})<br>`;
+                    total += (item.menu_items.price * item.quantity);
+                });
+                totalRevenue += total;
+
+                html += `
+                    <tr>
+                        <td style="font-size:0.85em; color:#7f8c8d;">${date}</td>
+                        <td><strong>${table}</strong></td>
+                        <td style="font-size:0.85em; color:#555;">${itemsText}</td>
+                        <td style="color:#e74c3c; font-weight:bold;">฿${total.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            
+            if(filteredData.length === 0) {
+                html = '<tr><td colspan="4" style="text-align:center; padding: 20px; font-size: 1em; color: #7f8c8d;">📅 ไม่พบข้อมูลประวัติบิล</td></tr>';
+            } else if (startDateVal || endDateVal) {
+                html += `
+                    <tr style="background-color: #fff4c2;">
+                        <td colspan="3" style="text-align:right; font-weight:bold; color:#2c3e50;">ยอดรวมทั้งหมด:</td>
+                        <td style="color:#e74c3c; font-weight:bold; font-size:1.1em;">฿${totalRevenue.toLocaleString()}</td>
+                    </tr>
+                `;
+            }
+            document.getElementById('history-table-body').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

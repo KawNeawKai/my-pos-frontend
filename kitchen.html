@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>หน้าจอห้องครัว (KDS)</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e272e; color: white; padding: 20px; margin: 0;}
+        
+        .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #2f3640; padding-bottom: 15px; flex-wrap: wrap; gap: 15px;}
+        h1 { color: #f1f2f6; margin: 0; font-size: 1.8em;}
+        
+        /* ปุ่มเปิดเสียงแจ้งเตือน */
+        .sound-btn { background-color: #f39c12; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: 0.2s; display: flex; align-items: center; gap: 8px;}
+        .sound-btn:hover { background-color: #e67e22; transform: translateY(-2px);}
+        .sound-btn.active { background-color: #27ae60; cursor: default; pointer-events: none;}
+
+        /* 🌟 ระบบ Grid รองรับมือถือและ iPad */
+        .order-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        
+        .order-card { 
+            color: #333; padding: 20px; border-radius: 12px; 
+            box-shadow: 0 8px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; 
+            justify-content: space-between; transition: all 0.3s ease; position: relative;
+        }
+
+        /* อนิเมชั่นเด้งดึ๋งเมื่อออเดอร์เข้าใหม่ */
+        @keyframes popIn {
+            0% { transform: scale(0.8) translateY(30px); opacity: 0; }
+            60% { transform: scale(1.03); opacity: 1; }
+            80% { transform: scale(0.98); }
+            100% { transform: scale(1) translateY(0); }
+        }
+        .new-order-anim {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.6); 
+        }
+
+        /* สีแบ่งตามเวลา (SLA) */
+        .status-green  { background: #d1ffd6; border: 3px solid #2ecc71; } 
+        .status-yellow { background: #fff4c2; border: 3px solid #f1c40f; } 
+        .status-orange { background: #ffe0b2; border: 3px solid #e67e22; } 
+        .status-red    { background: #ffcccc; border: 3px solid #e74c3c; } 
+        
+        @keyframes flashRed {
+            0% { background-color: #ffcccc; transform: scale(1); }
+            50% { background-color: #ffb8b8; transform: scale(1.02); }
+            100% { background-color: #ffcccc; transform: scale(1); }
+        }
+        .status-blink { background: #ffcccc; border: 4px solid #c0392b; animation: flashRed 1s infinite; }
+
+        .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed rgba(0,0,0,0.15); padding-bottom: 15px; margin-bottom: 15px;}
+        .table-no { font-size: 1.5em; font-weight: bold; color: #2c3e50; display: flex; align-items: center; gap: 5px;}
+        .timer-badge { background: #2c3e50; color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-family: monospace; font-size: 1.2em; display: flex; align-items: center; gap: 5px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);}
+        
+        .menu-name { font-size: 1.5em; font-weight: bold; margin-bottom: 10px; color: #2980b9;}
+        .qty { font-size: 1.5em; font-weight: bold; color: #c0392b; margin-bottom: 15px; background: rgba(255,255,255,0.8); padding: 5px 15px; border-radius: 8px; display: inline-block; border: 1px solid rgba(0,0,0,0.1);}
+        .note-box { font-size: 1.1em; color: #d35400; background: rgba(255, 234, 167, 0.9); padding: 12px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #e67e22; font-weight: bold;}
+        
+        /* ปุ่มทัชสกรีน */
+        .btn-serve { background-color: #27ae60; color: white; border: none; padding: 18px; border-radius: 10px; cursor: pointer; width: 100%; font-size: 1.3em; font-weight: bold; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); text-transform: uppercase;}
+        .btn-serve:active { background-color: #219a52; transform: scale(0.98);}
+        .btn-serve:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none;}
+        
+        .empty-state { text-align: center; color: #7f8c8d; font-size: 1.5em; grid-column: 1 / -1; padding: 60px 20px; background: rgba(255,255,255,0.05); border-radius: 15px; border: 2px dashed #34495e;}
+
+        /* 📱 โหมดมือถือ */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .header-container { flex-direction: column; text-align: center; align-items: stretch;}
+            .order-container { grid-template-columns: 1fr; }
+            .sound-btn { justify-content: center; padding: 15px;}
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>🔥 Kitchen Display (KDS)</h1>
+        <button id="soundToggleBtn" class="sound-btn" onclick="enableSound()">🔕 คลิกเพื่อเปิดเสียงแจ้งเตือน</button>
+    </div>
+    
+    <div id="order-list" class="order-container">
+        <div class="empty-state">กำลังโหลดออเดอร์...</div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://my-pos-backend-0s18.onrender.com';
+        const socket = io(BACKEND_URL);
+        
+        // กำหนดเวลา (วินาที) สำหรับเปลี่ยนสีการ์ด
+        const TIME_LIMITS = { yellow: 60, orange: 120, red: 180, blink: 240 };
+
+        let currentOrders = [];
+        let timerInterval;
+        
+        let knownOrderIds = new Set(); 
+        let isFirstLoad = true;        
+        let soundEnabled = false;      
+        
+        const bellSound = new Audio('https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg');
+
+        function enableSound() {
+            soundEnabled = true;
+            bellSound.play().catch(e => console.log("กำลังโหลดเสียง...")); 
+            const btn = document.getElementById('soundToggleBtn');
+            btn.innerHTML = '🔔 ระบบเสียงพร้อมทำงาน';
+            btn.classList.add('active');
+        }
+
+        async function fetchOrders() {
+            try {
+                // ทะลวง Cache ดึงข้อมูลล่าสุดเสมอ
+                const response = await fetch(`${BACKEND_URL}/api/kitchen/orders?t=${new Date().getTime()}`);
+                currentOrders = await response.json();
+                renderOrders();
+            } catch (error) {
+                document.getElementById('order-list').innerHTML = '<div class="empty-state" style="color:#e74c3c; border-color:#e74c3c;">❌ ขาดการเชื่อมต่อกับเซิร์ฟเวอร์</div>';
+            }
+        }
+
+        function renderOrders() {
+            const orderList = document.getElementById('order-list');
+            orderList.innerHTML = '';
+
+            if (currentOrders.length === 0) {
+                orderList.innerHTML = '<div class="empty-state">🎉 ว่างแล้ว! ไม่มีออเดอร์ค้างครับ ลุยพักผ่อนได้เลย! 👩‍🍳✨</div>';
+                return;
+            }
+
+            let hasNewOrder = false; 
+
+            currentOrders.forEach(item => {
+                const tableName = item.orders?.tables?.table_number || '?';
+                const menuName = item.menu_items?.name || 'ไม่ทราบเมนู';
+                const qty = item.quantity;
+                const noteHtml = item.notes ? `<div class="note-box">📝 ${item.notes}</div>` : '';
+
+                // เช็คออเดอร์ใหม่
+                let isNewItem = false;
+                if (!isFirstLoad && !knownOrderIds.has(item.id)) {
+                    isNewItem = true;
+                    hasNewOrder = true; 
+                }
+                knownOrderIds.add(item.id); 
+
+                const card = document.createElement('div');
+                card.id = `card-${item.id}`;
+                
+                const animClass = isNewItem ? 'new-order-anim' : '';
+                card.className = `order-card status-green ${animClass}`;
+                
+                card.innerHTML = `
+                    <div>
+                        <div class="card-header">
+                            <div class="table-no">🍽️${tableName}</div>
+                            <div class="timer-badge" id="timer-${item.id}">⏱️ 00:00</div>
+                        </div>
+                        <div class="menu-name">${menuName}</div>
+                        <div class="qty">จำนวน: x${qty}</div>
+                        ${noteHtml}
+                    </div>
+                    <button class="btn-serve" onclick="serveOrder(${item.id}, this)">✅ ทำเสร็จแล้ว</button>
+                `;
+                orderList.appendChild(card);
+            });
+
+            if (hasNewOrder && soundEnabled) {
+                bellSound.currentTime = 0; 
+                bellSound.play().catch(e => console.log("เสียงไม่เล่น:", e));
+            }
+
+            isFirstLoad = false; 
+            updateAllTimers();
+        }
+
+        function updateAllTimers() {
+            const now = new Date().getTime(); 
+
+            currentOrders.forEach(item => {
+                if (!item.ordered_at) return; 
+
+                let timeString = item.ordered_at;
+                if (!timeString.endsWith('Z')) timeString += 'Z';
+
+                const orderTime = new Date(timeString).getTime();
+                const diffSeconds = Math.floor((now - orderTime) / 1000);
+                const displaySeconds = diffSeconds < 0 ? 0 : diffSeconds;
+
+                const m = Math.floor(displaySeconds / 60).toString().padStart(2, '0');
+                const s = (displaySeconds % 60).toString().padStart(2, '0');
+                
+                const timerElement = document.getElementById(`timer-${item.id}`);
+                const cardElement = document.getElementById(`card-${item.id}`);
+
+                if (timerElement && cardElement) {
+                    timerElement.innerHTML = `⏱️ ${m}:${s}`;
+
+                    const hasAnim = cardElement.classList.contains('new-order-anim');
+                    
+                    // รีเซ็ตคลาสแล้วเติมคลาสสีใหม่เข้าไป
+                    cardElement.className = 'order-card'; 
+                    if (hasAnim) cardElement.classList.add('new-order-anim');
+                    
+                    if (displaySeconds >= TIME_LIMITS.blink) cardElement.classList.add('status-blink');
+                    else if (displaySeconds >= TIME_LIMITS.red) cardElement.classList.add('status-red');
+                    else if (displaySeconds >= TIME_LIMITS.orange) cardElement.classList.add('status-orange');
+                    else if (displaySeconds >= TIME_LIMITS.yellow) cardElement.classList.add('status-yellow');
+                    else cardElement.classList.add('status-green');
+                }
+            });
+        }
+
+        // 🌟 อัปเกรดปุ่มเสิร์ฟ ให้มีสถานะโหลด ป้องกันการกดซ้ำ
+        async function serveOrder(id, btnElement) {
+            btnElement.innerHTML = '⏳ กำลังบันทึก...';
+            btnElement.style.backgroundColor = '#f39c12';
+            btnElement.disabled = true;
+
+            try {
+                await fetch(`${BACKEND_URL}/api/kitchen/orders/${id}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'served' })
+                });
+                
+                // ซ่อนการ์ดทิ้งทันทีให้ดูไวขึ้น ไม่ต้องรอ socket รีเฟรช
+                const card = document.getElementById(`card-${id}`);
+                if(card) card.style.display = 'none';
+
+            } catch (error) {
+                alert('❌ เกิดข้อผิดพลาด ไม่สามารถส่งข้อมูลได้');
+                btnElement.innerHTML = '✅ ทำเสร็จแล้ว';
+                btnElement.style.backgroundColor = '#27ae60';
+                btnElement.disabled = false;
+            }
+        }
+
+        // ใช้งาน Socket.io ควบคู่กับ Polling กันเหนียว
+        socket.on('update_kitchen', () => fetchOrders());
+        fetchOrders();
+        
+        clearInterval(timerInterval);
+        timerInterval = setInterval(updateAllTimers, 1000);
+        setInterval(fetchOrders, 30000); // รีเฟรชข้อมูลทุก 30 วิเผื่อเน็ตหลุด
+    </script>
+</body>
+</html>

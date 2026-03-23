@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>หน้าจอแคชเชียร์ (POS)</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f4f6f9; margin: 0; color: #333; height: 100vh; display: flex; flex-direction: column;}
+        
+        .header-container { background-color: #f39c12; color: white; padding: 15px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; text-align: center;}
+        h1 { margin: 0; font-size: 1.8em; text-shadow: 1px 1px 3px rgba(0,0,0,0.2);}
+        
+        /* 🌟 Dashboard สรุปสถานะโต๊ะ */
+        .dashboard-bar { display: flex; justify-content: space-around; background: white; padding: 15px; border-bottom: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
+        .stat-box { text-align: center; font-weight: bold; font-size: 1.1em; padding: 10px 15px; border-radius: 8px; flex: 1; margin: 0 5px;}
+        .stat-empty { background: #f8f9fa; color: #7f8c8d; border: 1px dashed #bdc3c7;}
+        .stat-dining { background: #fff4c2; color: #d35400; border: 1px solid #f1c40f;}
+        .stat-ready { background: #ffcccc; color: #c0392b; border: 1px solid #e74c3c;}
+
+        /* 🌟 ระบบ Grid ผังโต๊ะ (Table Layout) */
+        .orders-container-wrapper { flex-grow: 1; padding: 20px; overflow-y: auto;}
+        .floor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px;}
+        
+        .table-card { border-radius: 12px; padding: 15px; display: flex; flex-direction: column; cursor: pointer; position: relative; overflow: hidden; transition: 0.2s; box-sizing: border-box; min-height: 140px;}
+        .table-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1);}
+        
+        /* สถานะโต๊ะต่างๆ */
+        .table-empty { background: #ecf0f1; border: 2px dashed #bdc3c7; color: #95a5a6; justify-content: center; align-items: center;}
+        .table-empty .t-num { font-size: 3em; font-weight: bold; opacity: 0.5;}
+        
+        .table-active { background: white; border: 2px solid #f39c12; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.15);}
+        .table-ready { background: white; border: 2px solid #e74c3c; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);}
+        
+        .t-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px;}
+        .t-name { font-size: 1.4em; font-weight: bold; color: #2c3e50;}
+        .t-badge { font-size: 0.7em; padding: 3px 8px; border-radius: 12px; color: white; font-weight: bold;}
+        .b-dining { background: #f39c12; }
+        .b-ready { background: #e74c3c; animation: pulse 1.5s infinite;}
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        .t-preview { flex-grow: 1; font-size: 0.9em; color: #555; overflow: hidden;}
+        .t-total { font-size: 1.4em; font-weight: bold; color: #e74c3c; text-align: right; margin-top: 10px;}
+
+        /* =========================================
+           🌟 ระบบ Pop-up (Modals) ที่รองรับมือถือ
+           ========================================= */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px); padding: 15px; box-sizing: border-box;}
+        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; text-align: center; box-shadow: 0 15px 30px rgba(0,0,0,0.3); position: relative; box-sizing: border-box;}
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5em; cursor: pointer; color: #95a5a6; background: none; border: none;}
+        .close-btn:hover { color: #e74c3c;}
+        
+        h2 { margin-top: 0; color: #2c3e50; font-size: 1.6em;}
+        .text-highlight { color: #e74c3c; font-size: 1.6em; font-weight: bold; margin: 15px 0; background: #ffeaa7; padding: 10px; border-radius: 8px;}
+
+        /* รายละเอียดบิลใน Modal */
+        .bill-detail-list { text-align: left; max-height: 35vh; overflow-y: auto; margin-bottom: 15px; background: #fdfdfd; padding: 10px; border-radius: 8px; border: 1px solid #eee;}
+        .item-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #ddd; padding: 10px 0;}
+        .badge-served { background: #d1ffd6; color: #27ae60; font-size: 0.75em; padding: 3px 8px; border-radius: 12px; border: 1px solid #2ecc71;}
+        .badge-pending { background: #ffeaa7; color: #d35400; font-size: 0.75em; padding: 3px 8px; border-radius: 12px; border: 1px solid #f39c12;}
+
+        .pay-method-btn { width: 100%; padding: 20px; font-size: 1.3em; font-weight: bold; border-radius: 10px; border: none; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s;}
+        .pay-method-btn:active { transform: scale(0.96); }
+        .btn-cash { background-color: #2ecc71; color: white; }
+        .btn-qr { background-color: #003366; color: white; }
+
+        /* ระบบเครื่องคิดเลข (Numpad) ปรับสัดส่วนให้จิ้มง่าย */
+        .calc-display { background: #f1f2f6; border-radius: 10px; padding: 15px; margin-bottom: 15px; text-align: right; border: 1px solid #ddd;}
+        .calc-row { display: flex; justify-content: space-between; font-size: 1.2em; margin-bottom: 5px; color: #34495e;}
+        .calc-change { color: #27ae60; font-weight: bold; font-size: 1.5em; margin-top: 10px; padding-top: 10px; border-top: 2px dashed #ccc;}
+        
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;}
+        .num-btn { background: #fff; border: 2px solid #ecf0f1; padding: 15px 0; font-size: 1.5em; border-radius: 10px; cursor: pointer; font-weight: bold; color: #2c3e50; box-shadow: 0 2px 4px rgba(0,0,0,0.05); user-select: none;}
+        .num-btn:active { background: #ecf0f1; transform: scale(0.92);}
+        .btn-clear { background: #e74c3c; color: white; border-color: #c0392b;}
+        .btn-del { background: #f39c12; color: white; border-color: #d35400;} 
+        
+        .btn-confirm-pay { background: #2ecc71; color: white; width: 100%; padding: 18px; font-size: 1.3em; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.15);}
+        .btn-confirm-pay:active { background: #27ae60; transform: scale(0.98);}
+        .btn-confirm-pay:disabled { background: #95a5a6; cursor: not-allowed; transform: none; box-shadow: none;}
+
+        .qr-image { width: 100%; max-width: 250px; height: auto; margin: 10px auto 20px; display: block; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
+
+        .success-icon { font-size: 5em; margin-bottom: 10px; animation: popIn 0.5s ease;}
+        @keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        
+        .action-btn { width: 100%; padding: 15px; font-size: 1.2em; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; margin-bottom: 12px;}
+        .action-btn:active { transform: scale(0.98); }
+        .btn-point { background-color: #f1c40f; color: #2c3e50;}
+        .btn-print { background-color: #34495e; color: white;}
+        .btn-done { background-color: #e74c3c; color: white;}
+        
+        /* ล็อกการซูมและซ่อนคีย์บอร์ดเวลาจิ้มเบอร์โทรในมือถือ */
+        .phone-input { width: 100%; padding: 15px; font-size: 1.8em; text-align: center; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; background: #fafafa; color: #2980b9; font-weight: bold; pointer-events: none; letter-spacing: 2px;} 
+
+        /* โหมดกระดาษปริ้นใบเสร็จ */
+        #print-receipt { display: none; }
+        @media print {
+            body * { visibility: hidden; } 
+            #print-receipt, #print-receipt * { visibility: visible; }
+            #print-receipt { display: block; position: absolute; left: 0; top: 0; width: 100%; max-width: 80mm; font-family: 'Courier New', Courier, monospace; color: black; font-size: 14px; padding: 10px; margin: 0; }
+            .receipt-header { text-align: center; margin-bottom: 15px; }
+            .receipt-divider { border-top: 1px dashed black; margin: 10px 0; }
+            .receipt-item { display: flex; justify-content: space-between; margin-bottom: 5px; }
+            .receipt-total { text-align: right; font-size: 1.2em; font-weight: bold; margin-top: 10px;}
+            .receipt-points { margin-top: 10px; font-size: 0.9em; text-align: left; }
+        }
+
+        @media (max-width: 480px) {
+            .floor-grid { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-bar { font-size: 0.9em; padding: 10px; }
+            .modal-box { padding: 15px; }
+            .num-btn { padding: 12px 0; font-size: 1.3em;}
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>💰 ศูนย์บัญชาการแคชเชียร์ (POS)</h1>
+    </div>
+
+    <div class="dashboard-bar">
+        <div class="stat-box stat-empty">🪑 ว่าง: <span id="count-empty">0</span></div>
+        <div class="stat-box stat-dining">🍽️ ทานอยู่: <span id="count-dining">0</span></div>
+        <div class="stat-box stat-ready">💳 รอจ่าย: <span id="count-ready">0</span></div>
+    </div>
+
+    <div class="orders-container-wrapper">
+        <div id="floor-plan" class="floor-grid">
+            </div>
+    </div>
+
+    <div id="modal-bill-detail" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeAllModals()">✖</button>
+            <h2 style="border-bottom: 2px solid #f1f2f6; padding-bottom: 10px;">🍽️ โต๊ะ <span id="detail-table-no">?</span></h2>
+            
+            <div id="detail-items-list" class="bill-detail-list">
+                </div>
+            
+            <div style="font-size: 1.4em; font-weight: bold; color: #e74c3c; text-align: right; margin-bottom: 15px;">
+                ยอดรวม: ฿<span id="detail-total-amount">0</span>
+            </div>
+            
+            <button id="detail-checkout-btn" class="btn-confirm-pay" style="background:#3498db;">💳 ไปหน้าชำระเงิน</button>
+        </div>
+    </div>
+
+    <div id="modal-select-pay" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-btn" onclick="openBillDetailModal(currentOrderId)">🔙</button>
+            <h2>เลือกวิธีชำระเงิน</h2>
+            <div class="text-highlight">ยอดรวม: ฿<span id="display-total-pay">0</span></div>
+            <button class="pay-method-btn btn-cash" onclick="openCashModal()">💵 จ่ายด้วยเงินสด</button>
+            <button class="pay-method-btn btn-qr" onclick="openQrModal()">📱 สแกน QR Code</button>
+        </div>
+    </div>
+
+    <div id="modal-cash" class="modal-overlay">
+        <div class="modal-box" style="max-width: 380px;">
+            <button class="close-btn" onclick="closeAllModals()">✖</button>
+            <h2>💵 รับเงินสด</h2>
+            <div class="calc-display">
+                <div class="calc-row"><span>ยอดชำระ:</span> <span>฿<span id="calc-total">0</span></span></div>
+                <div class="calc-row"><span>รับเงินมา:</span> <span style="color:#2980b9; font-weight:bold;">฿<span id="calc-received">0</span></span></div>
+                <div class="calc-row calc-change" id="change-text">เงินทอน: ฿0</div>
+            </div>
+            <div class="numpad">
+                <button class="num-btn" onclick="pressNum(1)">1</button>
+                <button class="num-btn" onclick="pressNum(2)">2</button>
+                <button class="num-btn" onclick="pressNum(3)">3</button>
+                <button class="num-btn" onclick="pressNum(4)">4</button>
+                <button class="num-btn" onclick="pressNum(5)">5</button>
+                <button class="num-btn" onclick="pressNum(6)">6</button>
+                <button class="num-btn" onclick="pressNum(7)">7</button>
+                <button class="num-btn" onclick="pressNum(8)">8</button>
+                <button class="num-btn" onclick="pressNum(9)">9</button>
+                <button class="num-btn btn-clear" onclick="clearNum()">C</button>
+                <button class="num-btn" onclick="pressNum(0)">0</button>
+                <button class="num-btn" onclick="pressNum('00')">00</button>
+            </div>
+            <button id="btn-submit-cash" class="btn-confirm-pay" disabled onclick="processPayment(this)">✅ ยืนยันชำระเงิน</button>
+        </div>
+    </div>
+
+    <div id="modal-qr" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeAllModals()">✖</button>
+            <h2>📱 สแกนชำระเงิน</h2>
+            <div class="text-highlight">ยอดรวม: ฿<span id="qr-total">0</span></div>
+            <img id="qr-image-display" src="" class="qr-image" alt="QR Code พร้อมเพย์">
+            <button class="btn-confirm-pay" onclick="processPayment(this)">✅ โอนเงินเรียบร้อยแล้ว</button>
+        </div>
+    </div>
+
+    <div id="modal-success" class="modal-overlay">
+        <div class="modal-box">
+            <div class="success-icon">✅</div>
+            <h2>ชำระเงินสำเร็จ!</h2>
+            <p style="color:#7f8c8d; margin-bottom: 25px; font-size: 1.1em;">ขอบคุณที่ใช้บริการครับ</p>
+            <button class="action-btn btn-point" onclick="openPointsModal()">⭐ สะสมคะแนนสมาชิก</button>
+            <button class="action-btn btn-print" onclick="printReceipt()">🖨️ พิมพ์ใบเสร็จ</button>
+            <button class="action-btn btn-done" onclick="closeAllModals()">🚪 ปิด (เสร็จสิ้น)</button>
+        </div>
+    </div>
+
+    <div id="modal-points" class="modal-overlay">
+        <div class="modal-box" style="max-width: 380px;">
+            <button class="close-btn" onclick="openSuccessModal()">🔙</button>
+            <h2>⭐ สะสมคะแนน</h2>
+            <p style="margin-top:0; color:#555;">กรุณากรอกเบอร์โทรศัพท์ลูกค้า</p>
+            
+            <input type="text" id="member-phone" class="phone-input" placeholder="08X-XXX-XXXX" readonly>
+            
+            <div class="numpad">
+                <button class="num-btn" onclick="pressPhone('1')">1</button>
+                <button class="num-btn" onclick="pressPhone('2')">2</button>
+                <button class="num-btn" onclick="pressPhone('3')">3</button>
+                <button class="num-btn" onclick="pressPhone('4')">4</button>
+                <button class="num-btn" onclick="pressPhone('5')">5</button>
+                <button class="num-btn" onclick="pressPhone('6')">6</button>
+                <button class="num-btn" onclick="pressPhone('7')">7</button>
+                <button class="num-btn" onclick="pressPhone('8')">8</button>
+                <button class="num-btn" onclick="pressPhone('9')">9</button>
+                <button class="num-btn btn-clear" onclick="clearPhone()">C</button>
+                <button class="num-btn" onclick="pressPhone('0')">0</button>
+                <button class="num-btn btn-del" onclick="deletePhone()">⌫</button>
+            </div>
+
+            <button class="btn-confirm-pay" id="btn-submit-points" onclick="savePoints(this)">✅ ยืนยันให้คะแนน</button>
+        </div>
+    </div>
+
+    <div id="print-receipt">
+        <div class="receipt-header">
+            <h3>ร้านกะแต๊ก</h3>
+            <p>ใบเสร็จรับเงิน (Receipt)</p>
+            <p id="receipt-date"></p>
+            <p id="receipt-table" style="font-weight: bold; font-size: 1.2em;"></p>
+        </div>
+        <div class="receipt-divider"></div>
+        <div id="receipt-items-list"></div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-total">
+            ยอดรวมทั้งสิ้น: ฿<span id="receipt-total-amount">0</span>
+        </div>
+        
+        <div id="receipt-points-section" style="display: none;">
+            <div class="receipt-divider"></div>
+            <div class="receipt-points">
+                <p style="margin: 5px 0;">สมาชิก: <span id="r-phone"></span></p>
+                <p style="margin: 5px 0;">คะแนนที่ได้รับรอบนี้: <span id="r-earned">0</span> แต้ม</p>
+                <p style="margin: 5px 0; font-weight: bold;">คะแนนสะสมรวม: <span id="r-total">0</span> แต้ม</p>
+            </div>
+        </div>
+
+        <div class="receipt-divider"></div>
+        <div class="receipt-header" style="margin-top: 20px;">
+            <p>ขอบคุณที่ใช้บริการครับ!</p>
+            <p>Please come again</p>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://my-pos-backend-0s18.onrender.com';
+        // 🌟 จำนวนโต๊ะในร้านถูกตั้งไว้ที่ 10 ตรงนี้ครับ
+        const TOTAL_TABLES = 10; 
+        
+        let allOrders = []; 
+        let currentOrderData = null; 
+        
+        let currentOrderId = null;
+        let currentTotal = 0;
+        let receivedAmount = "";
+        
+        let customerPhone = "";
+        let pointsEarned = 0;
+        let pointsTotal = 0;
+
+        async function fetchOrders() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/cashier/orders?t=${new Date().getTime()}`);
+                allOrders = await response.json(); 
+                renderFloorPlan(allOrders);
+            } catch (error) {
+                document.getElementById('floor-plan').innerHTML = '<div style="color:#e74c3c; grid-column: 1/-1; text-align:center;">❌ ขาดการเชื่อมต่อกับเซิร์ฟเวอร์</div>';
+            }
+        }
+
+        // 🌟 ฟังก์ชันวาดผังโต๊ะ (อัปเกรดระบบดูดเฉพาะตัวเลข)
+        function renderFloorPlan(orders) {
+            const container = document.getElementById('floor-plan');
+            container.innerHTML = '';
+
+            let countEmpty = 0, countDining = 0, countReady = 0;
+
+            for (let i = 1; i <= TOTAL_TABLES; i++) {
+                // 🌟 ไม้ตาย: ดึงมาเฉพาะ "ตัวเลข" ตัดตัวหนังสือทิ้งให้หมด
+                const order = orders.find(o => {
+                    const rawTable = String(o.tables?.table_number || '');
+                    const matchNum = rawTable.match(/\d+/); // ใช้ Regex ดูดมาแค่ตัวเลข
+                    return matchNum ? parseInt(matchNum[0]) === i : false;
+                });
+
+                if (!order) {
+                    countEmpty++;
+                    container.innerHTML += `
+                        <div class="table-card table-empty">
+                            <div class="t-num">${i}</div>
+                            <div>ว่าง</div>
+                        </div>
+                    `;
+                } else {
+                    let total = 0;
+                    let isAllServed = true;
+                    let itemPreviewHtml = '';
+                    let itemCount = 0;
+
+                    order.order_items.forEach(item => {
+                        total += (item.menu_items?.price || 0) * item.quantity;
+                        if (item.status !== 'served') isAllServed = false;
+                        
+                        // โชว์แค่ 2 เมนูแรกเป็นพรีวิวหน้ากล่อง
+                        if (itemCount < 2) {
+                            const name = item.menu_items?.name.split('(')[0].trim() || 'อาหาร';
+                            itemPreviewHtml += `<div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">- ${name} (x${item.quantity})</div>`;
+                        }
+                        itemCount++;
+                    });
+
+                    if (itemCount > 2) {
+                        itemPreviewHtml += `<div style="color:#95a5a6; font-size:0.9em; margin-top:3px;">... และอีก ${itemCount - 2} รายการ</div>`;
+                    }
+
+                    if (isAllServed) countReady++; else countDining++;
+
+                    const cardClass = isAllServed ? 'table-ready' : 'table-active';
+                    const badgeClass = isAllServed ? 'b-ready' : 'b-dining';
+                    const badgeText = isAllServed ? 'ครบแล้ว / รอจ่าย' : 'กำลังทำ';
+
+                    // ดึงชื่อโต๊ะจริงๆ มาแสดง (เผื่อเป็นชื่อ VIP)
+                    const displayTableName = order.tables?.table_number || i;
+
+                    container.innerHTML += `
+                        <div class="table-card ${cardClass}" onclick="openBillDetailModal(${order.id})">
+                            <div class="t-header">
+                                <span class="t-name">${displayTableName}</span>
+                                <span class="t-badge ${badgeClass}">${badgeText}</span>
+                            </div>
+                            <div class="t-preview">${itemPreviewHtml}</div>
+                            <div class="t-total">฿${total.toLocaleString()}</div>
+                        </div>
+                    `;
+                }
+            }
+
+            // อัปเดตยอดแดชบอร์ดด้านบน
+            document.getElementById('count-empty').innerText = countEmpty;
+            document.getElementById('count-dining').innerText = countDining;
+            document.getElementById('count-ready').innerText = countReady;
+        }
+
+        // 🌟 เปิดดูรายละเอียดบิลก่อนกดจ่าย
+        function openBillDetailModal(orderId) {
+            const order = allOrders.find(o => o.id === orderId);
+            if(!order) return;
+
+            let total = 0;
+            let itemsHtml = '';
+
+            order.order_items.forEach(item => {
+                const price = item.menu_items?.price || 0;
+                const subtotal = price * item.quantity;
+                total += subtotal;
+                const name = item.menu_items?.name.split('(')[0].trim() || 'ไม่ทราบชื่อ';
+                
+                const statusBadge = item.status === 'served' 
+                    ? `<span class="badge-served">✅ เสิร์ฟแล้ว</span>` 
+                    : `<span class="badge-pending">⏳ กำลังทำ</span>`;
+
+                itemsHtml += `
+                    <div class="item-row">
+                        <div style="flex-grow:1; padding-right:10px;">
+                            <strong style="color:#2c3e50;">${name} (x${item.quantity})</strong><br>
+                            <div style="margin-top:5px;">${statusBadge}</div>
+                        </div>
+                        <div style="font-weight:bold; font-size:1.1em; color:#333;">฿${subtotal.toLocaleString()}</div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('detail-table-no').innerText = order.tables?.table_number || '?';
+            document.getElementById('detail-items-list').innerHTML = itemsHtml;
+            document.getElementById('detail-total-amount').innerText = total.toLocaleString();
+            
+            // ส่งค่าไปเตรียมพร้อมที่ปุ่มหน้าถัดไป
+            document.getElementById('detail-checkout-btn').onclick = () => {
+                startCheckout(order.id, total);
+            };
+
+            closeAllModals();
+            document.getElementById('modal-bill-detail').style.display = 'flex';
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+            receivedAmount = ""; 
+        }
+
+        function startCheckout(orderId, totalAmount) {
+            currentOrderId = orderId;
+            currentTotal = totalAmount;
+            currentOrderData = allOrders.find(o => o.id === orderId);
+            
+            customerPhone = "";
+            pointsEarned = 0;
+            pointsTotal = 0;
+            
+            document.getElementById('display-total-pay').innerText = currentTotal.toLocaleString();
+            closeAllModals();
+            document.getElementById('modal-select-pay').style.display = 'flex';
+        }
+
+        // --- Flow เงินสด ---
+        function openCashModal() {
+            closeAllModals();
+            document.getElementById('calc-total').innerText = currentTotal.toLocaleString();
+            updateCashDisplay();
+            document.getElementById('modal-cash').style.display = 'flex';
+        }
+
+        function pressNum(num) {
+            if(receivedAmount.length < 8) {
+                receivedAmount += num.toString();
+                updateCashDisplay();
+            }
+        }
+
+        function clearNum() {
+            receivedAmount = "";
+            updateCashDisplay();
+        }
+
+        function updateCashDisplay() {
+            const displayReceived = document.getElementById('calc-received');
+            const displayChange = document.getElementById('change-text');
+            const btnSubmit = document.getElementById('btn-submit-cash');
+            
+            let recVal = parseInt(receivedAmount) || 0;
+            displayReceived.innerText = recVal.toLocaleString();
+
+            let change = recVal - currentTotal;
+            
+            if (change >= 0 && recVal > 0) {
+                displayChange.innerText = `เงินทอน: ฿${change.toLocaleString()}`;
+                displayChange.style.color = '#27ae60';
+                btnSubmit.disabled = false;
+            } else {
+                displayChange.innerText = `ขาดอีก: ฿${Math.abs(change).toLocaleString()}`;
+                displayChange.style.color = '#e74c3c';
+                btnSubmit.disabled = true;
+            }
+        }
+
+        // --- Flow QR Code ---
+        function openQrModal() {
+            closeAllModals();
+            document.getElementById('qr-total').innerText = currentTotal.toLocaleString();
+            
+            const promptPayID = "0918143178"; 
+            const qrImageUrl = `https://promptpay.io/${promptPayID}/${currentTotal}.png`;
+            document.getElementById('qr-image-display').src = qrImageUrl;
+            
+            document.getElementById('modal-qr').style.display = 'flex';
+        }
+
+        async function processPayment(btnElement) {
+            const oldText = btnElement.innerHTML;
+            btnElement.innerHTML = '⏳ กำลังบันทึก...';
+            btnElement.disabled = true;
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/cashier/checkout`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: currentOrderId })
+                });
+                
+                openSuccessModal();
+                fetchOrders(); // รีเฟรชโต๊ะ
+            } catch (error) {
+                alert("❌ เกิดข้อผิดพลาดในการตัดบิล");
+                btnElement.innerHTML = oldText;
+                btnElement.disabled = false;
+            }
+        }
+
+        function openSuccessModal() {
+            closeAllModals();
+            document.getElementById('modal-success').style.display = 'flex';
+        }
+
+        // --- โหมดสะสมแต้ม ---
+        function openPointsModal() {
+            closeAllModals();
+            customerPhone = "";
+            updatePhoneDisplay();
+            document.getElementById('modal-points').style.display = 'flex';
+        }
+
+        function pressPhone(num) {
+            if (customerPhone.length < 10) { 
+                customerPhone += num;
+                updatePhoneDisplay();
+            }
+        }
+
+        function clearPhone() {
+            customerPhone = "";
+            updatePhoneDisplay();
+        }
+
+        function deletePhone() {
+            customerPhone = customerPhone.slice(0, -1);
+            updatePhoneDisplay();
+        }
+
+        function updatePhoneDisplay() {
+            document.getElementById('member-phone').value = customerPhone;
+        }
+
+        async function savePoints(btnElement) {
+            if(customerPhone.length >= 9) {
+                const oldText = btnElement.innerHTML;
+                btnElement.innerHTML = '⏳ กำลังบันทึก...';
+                btnElement.disabled = true;
+
+                pointsEarned = Math.floor(currentTotal / 100);
+                
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/cashier/points`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone_number: customerPhone, points_earned: pointsEarned })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if(result.success) {
+                        pointsTotal = result.total_points; 
+                        alert(`✅ ให้คะแนนสำเร็จ!\n\nเบอร์: ${customerPhone}\nได้รับ: ${pointsEarned} แต้ม\nรวมสะสม: ${pointsTotal} แต้ม`);
+                        openSuccessModal(); 
+                    } else {
+                        alert("❌ เกิดข้อผิดพลาดจากฐานข้อมูล");
+                    }
+                } catch(err) {
+                    alert("❌ ไม่สามารถเชื่อมต่อระบบหลังบ้านได้");
+                } finally {
+                    btnElement.innerHTML = oldText;
+                    btnElement.disabled = false;
+                }
+            } else {
+                alert("❌ กรุณากรอกเบอร์โทรศัพท์ให้ครบ 10 หลัก");
+            }
+        }
+
+        // --- ระบบพิมพ์ใบเสร็จ ---
+        function printReceipt() {
+            if (!currentOrderData) return;
+
+            const now = new Date();
+            document.getElementById('receipt-date').innerText = `วันที่: ${now.toLocaleDateString('th-TH')} ${now.toLocaleTimeString('th-TH')}`;
+            document.getElementById('receipt-table').innerText = `โต๊ะ: ${currentOrderData.tables?.table_number || 'ไม่ระบุโต๊ะ'}`;
+
+            let itemsHtml = '';
+            currentOrderData.order_items.forEach(item => {
+                const name = item.menu_items.name.split('(')[0].trim(); 
+                const qty = item.quantity;
+                const price = item.menu_items.price * qty;
+                itemsHtml += `
+                    <div class="receipt-item">
+                        <span>${name} x${qty}</span>
+                        <span>${price}</span>
+                    </div>
+                `;
+            });
+            document.getElementById('receipt-items-list').innerHTML = itemsHtml;
+            document.getElementById('receipt-total-amount').innerText = currentTotal.toLocaleString();
+
+            const pointsSection = document.getElementById('receipt-points-section');
+            if (customerPhone !== "") {
+                pointsSection.style.display = 'block';
+                let hiddenPhone = customerPhone.substring(0,3) + "-XXX-" + customerPhone.substring(customerPhone.length - 4);
+                
+                document.getElementById('r-phone').innerText = hiddenPhone;
+                document.getElementById('r-earned').innerText = pointsEarned;
+                document.getElementById('r-total').innerText = pointsTotal;
+            } else {
+                pointsSection.style.display = 'none';
+            }
+
+            window.print(); 
+        }
+
+        fetchOrders();
+        setInterval(fetchOrders, 30000); // กันเหนียว รีเฟรชทุก 30 วิ
+        
+        const socket = io(BACKEND_URL);
+        socket.on('update_cashier', () => fetchOrders());
+    </script>
+</body>
+</html>
